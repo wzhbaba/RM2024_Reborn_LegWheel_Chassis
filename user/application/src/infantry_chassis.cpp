@@ -28,6 +28,7 @@
 
 void ChassisMotorInit() {
   board_comm.Init(&hcan1, 0x411);
+  RemoteControlInit(&huart3);
   chassis.MotorInit();
   chassis.PidInit();
   chassis.SpeedEstInit();
@@ -39,7 +40,7 @@ void ChassisCalcTask() {
   // CHASSIS_STOP || chassis.GetChassisState() == CHASSIS_RESET) {
   //     return;
   // }
-  if (board_comm.GetReadyFlag() == 1) {
+  if (remote.GetS2() == 1) {
     chassis.SetMotorTor();
   } else {
     chassis.StopMotor();
