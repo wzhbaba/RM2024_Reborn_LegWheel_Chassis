@@ -25,7 +25,7 @@
 /* Private constants ---------------------------------------------------------*/
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-const float k_gravity_comp = 6.95f * 9.8f;
+const float k_gravity_comp = 4.03f * 9.8f;
 const float k_roll_extra_comp_p = 500.0f;
 const float k_wheel_radius = 0.1f;
 
@@ -80,8 +80,8 @@ static void RightWheelCallback() {
  * @brief Initializes the motors of the chassis.
  */
 void Chassis::MotorInit() {
-  l_wheel_.Init(&hcan2, 0x141);
-  r_wheel_.Init(&hcan2, 0x142);
+  l_wheel_.Init(&hcan1, 0x142);
+  r_wheel_.Init(&hcan1, 0x141);
   lf_joint_.Init(&huart2, 0x01, 10);
   lb_joint_.Init(&huart2, 0x00, 10);
   rf_joint_.Init(&huart1, 0x01, 10);
