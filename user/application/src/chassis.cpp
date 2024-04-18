@@ -29,8 +29,8 @@ const float k_gravity_comp = 4.03f * 9.8f;
 const float k_roll_extra_comp_p = 500.0f;
 const float k_wheel_radius = 0.1f;
 
-const float k_lf_joint_bias = 0.902f;
-const float k_lb_joint_bias = 5.461f;
+const float k_lf_joint_bias = 0.724f;
+const float k_lb_joint_bias = 4.623f;
 const float k_rf_joint_bias = 2.357f;
 const float k_rb_joint_bias = 0.62f;
 
@@ -92,10 +92,10 @@ void Chassis::MotorInit() {
 }
 
 void Chassis::PidInit() {
-  left_leg_len_.Init(600.0f, 0.0f, 5.0f, 60.0f, 0.0001f);
-  right_leg_len_.Init(600.0f, 0.0f, 5.0f, 60.0f, 0.0001f);
+  left_leg_len_.Init(800.0f, 0.0f, 5.0f, 60.0f, 0.0001f);
+  right_leg_len_.Init(800.0f, 0.0f, 5.0f, 60.0f, 0.0001f);
   anti_crash_.Init(8.0f, 0.0f, 2.0f, 10.0f, 0.001f);
-  roll_ctrl_.Init(0.0008f, 0.00065f, 0.0f, 0.04f, 0.001f);
+  roll_ctrl_.Init(0.001f, 0.00065f, 0.0f, 0.04f, 0.001f);
   yaw_pos_.Init(0.5f, 0.0f, 0.0f, 5.0f, 0.01f);
   yaw_speed_.Init(1.0f, 0.0f, 0.0f, 10.0f, 0.0f);
   left_leg_len_.Inprovement(PID_CHANGING_INTEGRATION_RATE |
@@ -154,10 +154,10 @@ void Chassis::SetLQRData() {
   lqr_right_.SetSpeed(target_speed_);
   lqr_left_.SetDist(target_dist_);
   lqr_right_.SetDist(target_dist_);
-  lqr_left_.SetData(0, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
+  lqr_left_.SetData(dist_, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
                     vmc_left_.GetTheta(), vmc_left_.GetDotTheta(),
                     vmc_left_.GetLegLen());
-  lqr_right_.SetData(0, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
+  lqr_right_.SetData(dist_, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
                      vmc_right_.GetTheta(), vmc_right_.GetDotTheta(),
                      vmc_right_.GetLegLen());
   lqr_left_.SetForceNormal(vmc_left_.GetForceNormal());
@@ -245,7 +245,7 @@ void Chassis::LegCalc() {
 }
 
 void Chassis::SynthesizeMotion() {
-  // SetTargetYaw(((-remote.GetCh0() / 660.0f) * 1000.0f) * 0.001f);
+  SetTargetYaw(((-remote.GetCh0() / 660.0f) * 1000.0f) * 0.001f);
   if (vmc_left_.GetForceNormal() < 20.0f ||
       vmc_right_.GetForceNormal() < 20.0f) {
     yaw_pos_.SetRef(INS.YawTotalAngle);
