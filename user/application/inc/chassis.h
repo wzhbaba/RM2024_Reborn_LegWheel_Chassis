@@ -29,9 +29,9 @@
 #define RAD_2_DEGREE 57.2957795f     // 180/pi
 #define DEGREE_2_RAD 0.01745329252f  // pi/180
 
-#define CENTER_IMU_W 0.0942f
+#define CENTER_IMU_W 0.0923f
 #define CENTER_IMU_L 0.0f
-#define CENTER_IMU_H 0.0338f
+#define CENTER_IMU_H 0.052f
 
 #define VEL_PROCESS_NOISE 25   // 速度过程噪声
 #define VEL_MEASURE_NOISE 800  // 速度测量噪声
