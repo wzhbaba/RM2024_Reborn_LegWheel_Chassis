@@ -19,10 +19,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-
-#include "cmsis_os.h"
-#include "main.h"
 #include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -61,16 +60,16 @@ osThreadId chassisTaskHandle;
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const *argument);
-void StartInsTask(void const *argument);
-void StartLegMotorTask(void const *argument);
-void StartWheelMotorTask(void const *argument);
-void StartChassisTask(void const *argument);
+void StartDefaultTask(void const * argument);
+void StartInsTask(void const * argument);
+void StartLegMotorTask(void const * argument);
+void StartWheelMotorTask(void const * argument);
+void StartChassisTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize);
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -86,56 +85,56 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-    /* USER CODE BEGIN Init */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
 
-    /* USER CODE END Init */
+  /* USER CODE END Init */
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* definition and creation of defaultTask */
-    osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-    /* definition and creation of insTask */
-    osThreadDef(insTask, StartInsTask, osPriorityAboveNormal, 0, 1024);
-    insTaskHandle = osThreadCreate(osThread(insTask), NULL);
+  /* definition and creation of insTask */
+  osThreadDef(insTask, StartInsTask, osPriorityAboveNormal, 0, 1024);
+  insTaskHandle = osThreadCreate(osThread(insTask), NULL);
 
-    /* definition and creation of legMotorTask */
-    osThreadDef(legMotorTask, StartLegMotorTask, osPriorityNormal, 0, 512);
-    legMotorTaskHandle = osThreadCreate(osThread(legMotorTask), NULL);
+  /* definition and creation of legMotorTask */
+  osThreadDef(legMotorTask, StartLegMotorTask, osPriorityNormal, 0, 512);
+  legMotorTaskHandle = osThreadCreate(osThread(legMotorTask), NULL);
 
-    /* definition and creation of wheelMotorTask */
-    osThreadDef(wheelMotorTask, StartWheelMotorTask, osPriorityNormal, 0, 128);
-    wheelMotorTaskHandle = osThreadCreate(osThread(wheelMotorTask), NULL);
+  /* definition and creation of wheelMotorTask */
+  osThreadDef(wheelMotorTask, StartWheelMotorTask, osPriorityNormal, 0, 128);
+  wheelMotorTaskHandle = osThreadCreate(osThread(wheelMotorTask), NULL);
 
-    /* definition and creation of chassisTask */
-    osThreadDef(chassisTask, StartChassisTask, osPriorityNormal, 0, 1024);
-    chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
+  /* definition and creation of chassisTask */
+  osThreadDef(chassisTask, StartChassisTask, osPriorityNormal, 0, 1024);
+  chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -145,15 +144,15 @@ void MX_FREERTOS_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const *argument)
+void StartDefaultTask(void const * argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
     /* Infinite loop */
     for (;;) {
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         osDelay(500);
     }
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_StartInsTask */
@@ -163,9 +162,9 @@ void StartDefaultTask(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_StartInsTask */
-void StartInsTask(void const *argument)
+void StartInsTask(void const * argument)
 {
-    /* USER CODE BEGIN StartInsTask */
+  /* USER CODE BEGIN StartInsTask */
     static float ins_start;
     static float ins_dt;
     INS_Init();
@@ -176,7 +175,7 @@ void StartInsTask(void const *argument)
         ins_dt = DWT_GetTimeline_ms() - ins_start;
         osDelay(1);
     }
-    /* USER CODE END StartInsTask */
+  /* USER CODE END StartInsTask */
 }
 
 /* USER CODE BEGIN Header_StartLegMotorTask */
@@ -186,9 +185,9 @@ void StartInsTask(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_StartLegMotorTask */
-void StartLegMotorTask(void const *argument)
+void StartLegMotorTask(void const * argument)
 {
-    /* USER CODE BEGIN StartLegMotorTask */
+  /* USER CODE BEGIN StartLegMotorTask */
     static float leg_start;
     static float leg_dt;
 
@@ -199,7 +198,7 @@ void StartLegMotorTask(void const *argument)
         leg_dt = DWT_GetTimeline_ms() - leg_start;
         osDelay(1);
     }
-    /* USER CODE END StartLegMotorTask */
+  /* USER CODE END StartLegMotorTask */
 }
 
 /* USER CODE BEGIN Header_StartWheelMotorTask */
@@ -209,9 +208,9 @@ void StartLegMotorTask(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_StartWheelMotorTask */
-void StartWheelMotorTask(void const *argument)
+void StartWheelMotorTask(void const * argument)
 {
-    /* USER CODE BEGIN StartWheelMotorTask */
+  /* USER CODE BEGIN StartWheelMotorTask */
     static float wheel_start;
     static float wheel_dt;
 
@@ -222,7 +221,7 @@ void StartWheelMotorTask(void const *argument)
         wheel_dt = DWT_GetTimeline_ms() - wheel_start;
         osDelay(1);
     }
-    /* USER CODE END StartWheelMotorTask */
+  /* USER CODE END StartWheelMotorTask */
 }
 
 /* USER CODE BEGIN Header_StartChassisTask */
@@ -232,9 +231,9 @@ void StartWheelMotorTask(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_StartChassisTask */
-void StartChassisTask(void const *argument)
+void StartChassisTask(void const * argument)
 {
-    /* USER CODE BEGIN StartChassisTask */
+  /* USER CODE BEGIN StartChassisTask */
     static float chassis_start;
     static float chassis_dt;
 
@@ -245,7 +244,7 @@ void StartChassisTask(void const *argument)
         chassis_dt = DWT_GetTimeline_ms() - chassis_start;
         osDelay(1);
     }
-    /* USER CODE END StartChassisTask */
+  /* USER CODE END StartChassisTask */
 }
 
 /* Private application code --------------------------------------------------*/

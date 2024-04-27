@@ -92,12 +92,7 @@ void INS_Task(void) {
     INS.Accel[X] = BMI088.Accel[X];
     INS.Accel[Y] = BMI088.Accel[Y];
     INS.Accel[Z] = BMI088.Accel[Z];
-    INS.dGyro[X] = ((BMI088.Gyro[X]) - INS.Gyro[X]) / (INS.DGyroLPF + dt) +
-                   INS.dGyro[X] * INS.DGyroLPF / (INS.DGyroLPF + dt);
-    INS.dGyro[Y] = (BMI088.Gyro[Y] - INS.Gyro[Y]) / (INS.DGyroLPF + dt) +
-                   INS.dGyro[Y] * INS.DGyroLPF / (INS.DGyroLPF + dt);
-    INS.dGyro[Z] = (BMI088.Gyro[Z] - INS.Gyro[Z]) / (INS.DGyroLPF + dt) +
-                   INS.dGyro[Z] * INS.DGyroLPF / (INS.DGyroLPF + dt);
+
     INS.Gyro[X] = BMI088.Gyro[X];
     INS.Gyro[Y] = BMI088.Gyro[Y];
     INS.Gyro[Z] = BMI088.Gyro[Z];

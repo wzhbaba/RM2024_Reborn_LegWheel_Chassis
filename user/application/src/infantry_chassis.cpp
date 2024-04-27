@@ -35,7 +35,7 @@ void ChassisMotorInit() {
 }
 
 void ChassisCalcTask() {
-  chassis.Ctrl();
+  chassis.Controller();
   // if (chassis.GetState() == ROBOT_STOP || chassis.GetChassisState() ==
   // CHASSIS_STOP || chassis.GetChassisState() == CHASSIS_RESET) {
   //     return;
