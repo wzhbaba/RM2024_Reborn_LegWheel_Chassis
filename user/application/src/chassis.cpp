@@ -27,12 +27,17 @@
 /* Private variables ---------------------------------------------------------*/
 const float k_gravity_comp = 4.03f * 9.8f;
 const float k_roll_extra_comp_p = 500.0f;
-const float k_wheel_radius = 0.1f;
+const float k_wheel_radius = 0.076f;
 
-const float k_lf_joint_bias = 0.724f;
-const float k_lb_joint_bias = 4.623f;
-const float k_rf_joint_bias = 2.357f;
-const float k_rb_joint_bias = 0.62f;
+const float k_lf_joint_bias = 0.575f;
+const float k_lb_joint_bias = 2.955f;
+const float k_rf_joint_bias = 3.061f;
+const float k_rb_joint_bias = 1.174f;
+
+const float k_jump_force = 160.0f;
+const float k_jump_time = 0.15f;
+const float k_retract_force = -120.0f;
+const float k_retract_time = 0.1f;
 
 static float target_yaw;
 static KalmanFilter_t kf;
@@ -80,20 +85,20 @@ static void RightWheelCallback() {
  * @brief Initializes the motors of the chassis.
  */
 void Chassis::MotorInit() {
-  l_wheel_.Init(&hcan1, 0x142);
-  r_wheel_.Init(&hcan1, 0x141);
-  lf_joint_.Init(&huart2, 0x01, 10);
-  lb_joint_.Init(&huart2, 0x00, 10);
-  rf_joint_.Init(&huart1, 0x01, 10);
-  rb_joint_.Init(&huart1, 0x00, 10);
+  l_wheel_.Init(&hcan1, 0x141);
+  r_wheel_.Init(&hcan1, 0x142);
+  lf_joint_.Init(&huart2, 0x01, 10, k_lf_joint_bias);
+  lb_joint_.Init(&huart2, 0x00, 10, k_lb_joint_bias);
+  rf_joint_.Init(&huart1, 0x01, 10, k_rf_joint_bias);
+  rb_joint_.Init(&huart1, 0x00, 10, k_rb_joint_bias);
 
   l_wheel_.p_motor_instance_->pCanCallBack = LeftWheelCallback;
   r_wheel_.p_motor_instance_->pCanCallBack = RightWheelCallback;
 }
 
 void Chassis::PidInit() {
-  left_leg_len_.Init(800.0f, 0.0f, 5.0f, 60.0f, 0.0001f);
-  right_leg_len_.Init(800.0f, 0.0f, 5.0f, 60.0f, 0.0001f);
+  left_leg_len_.Init(800.0f, 0.0f, 20.0f, 60.0f, 0.0001f);
+  right_leg_len_.Init(800.0f, 0.0f, 20.0f, 60.0f, 0.0001f);
   anti_crash_.Init(8.0f, 0.0f, 2.0f, 10.0f, 0.001f);
   roll_ctrl_.Init(0.001f, 0.00065f, 0.0f, 0.04f, 0.001f);
   yaw_pos_.Init(0.5f, 0.0f, 0.0f, 5.0f, 0.01f);
@@ -114,19 +119,14 @@ void Chassis::PidInit() {
 }
 
 void Chassis::SetLegData() {
-  float left_angle[2], right_angle[2];
-  left_angle[0] = (lf_joint_.GetAngle() - k_lf_joint_bias) / 9.1f - 0.724f;
-  left_angle[1] =
-      (lb_joint_.GetAngle() - k_lb_joint_bias) / 9.1f + 0.724f + 3.141f;
-  right_angle[0] = -(rf_joint_.GetAngle() - k_rf_joint_bias) / 9.1f - 0.724f;
-  right_angle[1] =
-      -(rb_joint_.GetAngle() - k_rb_joint_bias) / 9.1f + 0.724f + 3.141f;
   vmc_left_.SetPhi(INS.Pitch * DEGREE_2_RAD);
   vmc_right_.SetPhi(INS.Pitch * DEGREE_2_RAD);
-  vmc_left_.SetPhi1(left_angle[1], lb_joint_.GetSpeed());
-  vmc_right_.SetPhi1(right_angle[1], -rb_joint_.GetSpeed());
-  vmc_left_.SetPhi4(left_angle[0], lf_joint_.GetSpeed());
-  vmc_right_.SetPhi4(right_angle[0], -rf_joint_.GetSpeed());
+  vmc_left_.SetPhi1(lb_joint_.GetAngle() + 0.724f + 3.141f,
+                    lb_joint_.GetSpeed());
+  vmc_right_.SetPhi1(-rb_joint_.GetAngle() + 0.724f + 3.141f,
+                     -rb_joint_.GetSpeed());
+  vmc_left_.SetPhi4(lf_joint_.GetAngle() - 0.724f, lf_joint_.GetSpeed());
+  vmc_right_.SetPhi4(-rf_joint_.GetAngle() - 0.724f, -rf_joint_.GetSpeed());
   vmc_left_.SetMeasureTor(lb_joint_.GetTor(), lf_joint_.GetTor());
   vmc_right_.SetMeasureTor(-rb_joint_.GetTor(), -rf_joint_.GetTor());
   vmc_left_.SetMeasureAccelZ(INS.MotionAccel_n[Z]);
@@ -152,16 +152,26 @@ void Chassis::SetVMCData() {
 void Chassis::SetLQRData() {
   lqr_left_.SetSpeed(target_speed_);
   lqr_right_.SetSpeed(target_speed_);
-  lqr_left_.SetDist(target_dist_);
-  lqr_right_.SetDist(target_dist_);
-  lqr_left_.SetData(dist_, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
-                    vmc_left_.GetTheta(), vmc_left_.GetDotTheta(),
-                    vmc_left_.GetLegLen());
-  lqr_right_.SetData(dist_, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
-                     vmc_right_.GetTheta(), vmc_right_.GetDotTheta(),
-                     vmc_right_.GetLegLen());
   lqr_left_.SetForceNormal(vmc_left_.GetForceNormal());
   lqr_right_.SetForceNormal(vmc_right_.GetForceNormal());
+
+  if (fabs(vel_) > 0.1f) {
+    dist_ = 0.0f;
+    lqr_left_.SetData(0, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
+                      vmc_left_.GetTheta(), vmc_left_.GetDotTheta(),
+                      vmc_left_.GetLegLen());
+    lqr_right_.SetData(0, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
+                       vmc_right_.GetTheta(), vmc_right_.GetDotTheta(),
+                       vmc_right_.GetLegLen());
+  } else {
+    dist_ += vel_ * dt_;
+    lqr_left_.SetData(dist_, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
+                      vmc_left_.GetTheta(), vmc_left_.GetDotTheta(),
+                      vmc_left_.GetLegLen());
+    lqr_right_.SetData(dist_, vel_, INS.Pitch * DEGREE_2_RAD, INS.Gyro[X],
+                       vmc_right_.GetTheta(), vmc_right_.GetDotTheta(),
+                       vmc_right_.GetLegLen());
+  }
 }
 
 void Chassis::LQRCalc() {
@@ -181,6 +191,40 @@ void Chassis::VMCTorCalc() {
   vmc_right_.TorCalc();
 }
 
+void Chassis::Jump() {
+  if (vmc_left_.GetLegLen() > 0.14f && vmc_right_.GetLegLen() > 0.14f &&
+      last_jump_state_ == false) {
+    left_leg_len_.SetRef(0.12f + roll_ctrl_.GetOutput());
+    right_leg_len_.SetRef(0.12f - roll_ctrl_.GetOutput());
+    left_leg_F_ = left_leg_len_.Calculate() + k_gravity_comp;
+    right_leg_F_ = right_leg_len_.Calculate() + k_gravity_comp;
+    last_jump_state_ = false;
+    return;
+  } else {
+    if (jump_state_ == true && last_jump_state_ == false) {
+      jump_start_time_ = HAL_GetTick() / 1000.0f;
+    }
+
+    jump_now_time_ = HAL_GetTick() / 1000.0f;
+
+    if (fabs(jump_now_time_ - jump_start_time_) <= k_jump_time) {
+      left_leg_F_ = k_jump_force;
+      right_leg_F_ = k_jump_force;
+    }
+
+    jump_now_time_ = HAL_GetTick() / 1000.0f;
+    if ((jump_now_time_ - jump_start_time_ - k_jump_time) <= k_retract_time &&
+        (jump_now_time_ - jump_start_time_) > k_jump_time) {
+      left_leg_F_ = k_retract_force;
+      right_leg_F_ = k_retract_force;
+    }
+    if ((jump_now_time_ - jump_start_time_ - k_jump_time) > k_retract_time) {
+      jump_state_ = false;
+    }
+    last_jump_state_ = jump_state_;
+  }
+}
+
 // TODO:速度融合仍需完善
 void Chassis::SpeedCalc() {
   left_w_wheel_ = l_wheel_.GetSpeed() + vmc_left_.GetPhi2Speed() - INS.Gyro[X];
@@ -195,32 +239,9 @@ void Chassis::SpeedCalc() {
                   vmc_right_.GetLegSpeed() * arm_sin_f32(vmc_right_.GetTheta());
   vel_m = (left_v_body_ + right_v_body_) / 2;
 
-  static float yaw_ddwrNwwr, yaw_p_ddwrNwwr, pitch_ddwrNwwr;
-  static float macc_y, macc_z, acc_last,
-      acc_m;  // 补偿后的实际平动加速度,机体系前进方向和竖直方向
+  static float acc_m;  // 补偿后的实际平动加速度,机体系前进方向和竖直方向
 
-  yaw_ddwrNwwr =
-      INS.dGyro[Z] *
-      CENTER_IMU_W;  // yaw旋转导致motion_acc[1]的额外加速度(机体前后方向)
-  yaw_p_ddwrNwwr =
-      powf(INS.Gyro[X], 2) * CENTER_IMU_L +
-      INS.dGyro[X] *
-          CENTER_IMU_H;  // pitch旋转导致motion_acc[1]的额外加速度(机体前后方向)
-  pitch_ddwrNwwr =
-      powf(INS.Gyro[X], 2) * CENTER_IMU_H +
-      INS.dGyro[X] *
-          CENTER_IMU_L;  // pitch旋转导致motion_acc[2]的额外加速度(机体竖直方向)
-
-  macc_y = INS.MotionAccel_b[Y] - yaw_ddwrNwwr - yaw_p_ddwrNwwr;
-  macc_z = INS.MotionAccel_b[Z] - pitch_ddwrNwwr;
-
-  acc_last = acc_m;
-  acc_m =
-      macc_y * arm_cos_f32(INS.Pitch * DEGREE_2_RAD) -
-      macc_z *
-          arm_sin_f32(
-              INS.Pitch *
-              DEGREE_2_RAD);  // 绝对系下的平动加速度,即机体系下的加速度投影到绝对系
+  acc_m = INS.MotionAccel_n[Y];
 
   // 使用kf同时估计加速度和速度,滤波更新
   kf.MeasuredVector[0] = vel_m;
@@ -229,19 +250,21 @@ void Chassis::SpeedCalc() {
   Kalman_Filter_Update(&kf);
   vel_ = kf.xhat_data[0];
   acc_ = kf.xhat_data[1];
-
-  dist_ = dist_ + vel_ * dt_;
 }
 
 void Chassis::LegCalc() {
   roll_ctrl_.SetMeasure(INS.Roll);
   roll_ctrl_.Calculate();
-  left_leg_len_.SetRef(0.18f + roll_ctrl_.GetOutput());
-  right_leg_len_.SetRef(0.18f - roll_ctrl_.GetOutput());
 
   float roll_comp = k_roll_extra_comp_p * INS.Roll * DEGREE_2_RAD;
-  left_leg_F_ = left_leg_len_.Calculate() + k_gravity_comp - roll_comp;
-  right_leg_F_ = right_leg_len_.Calculate() + k_gravity_comp + roll_comp;
+  if (jump_state_ == true) {
+    Jump();
+  } else {
+    left_leg_len_.SetRef(0.21f + roll_ctrl_.GetOutput());
+    right_leg_len_.SetRef(0.21f - roll_ctrl_.GetOutput());
+    left_leg_F_ = left_leg_len_.Calculate() + k_gravity_comp - roll_comp;
+    right_leg_F_ = right_leg_len_.Calculate() + k_gravity_comp + roll_comp;
+  }
 }
 
 void Chassis::SynthesizeMotion() {
@@ -274,7 +297,7 @@ void Chassis::SynthesizeMotion() {
   right_leg_T_ = lqr_right_.GetLegTor() - anti_crash_.GetOutput();
 }
 
-void Chassis::Ctrl() {
+void Chassis::Controller() {
   dt_ = DWT_GetDeltaT(&dwt_cnt_);
   // Switch();
   SetState();
@@ -291,21 +314,21 @@ void Chassis::Ctrl() {
 }
 
 void Chassis::SetMotorTor() {
-  chassis.lf_joint_.SetMotorT(chassis.GetLFJoint());
-  chassis.lb_joint_.SetMotorT(chassis.GetLBJoint());
-  chassis.rf_joint_.SetMotorT(chassis.GetRFJoint());
-  chassis.rb_joint_.SetMotorT(chassis.GetRBJoint());
-  chassis.l_wheel_.SetTor(chassis.GetLeftWheel());
-  chassis.r_wheel_.SetTor(chassis.GetRightWheel());
+  lf_joint_.SetMotorT(GetLFJoint());
+  lb_joint_.SetMotorT(GetLBJoint());
+  rf_joint_.SetMotorT(GetRFJoint());
+  rb_joint_.SetMotorT(GetRBJoint());
+  l_wheel_.SetTor(GetLeftWheel());
+  r_wheel_.SetTor(GetRightWheel());
 }
 
 void Chassis::StopMotor() {
-  chassis.lf_joint_.SetMotorT(0.0f);
-  chassis.rf_joint_.SetMotorT(0.0f);
-  chassis.lb_joint_.SetMotorT(0.0f);
-  chassis.rb_joint_.SetMotorT(0.0f);
-  chassis.l_wheel_.SetTor(0.0f);
-  chassis.r_wheel_.SetTor(0.0f);
+  lf_joint_.SetMotorT(0.0f);
+  rf_joint_.SetMotorT(0.0f);
+  lb_joint_.SetMotorT(0.0f);
+  rb_joint_.SetMotorT(0.0f);
+  l_wheel_.SetTor(0.0f);
+  r_wheel_.SetTor(0.0f);
 }
 
 void Chassis::Reset() {
@@ -346,6 +369,7 @@ void Chassis::Switch() {
 }
 
 void Chassis::SetState() {
+  static uint8_t ready_jump;
   // if (chassis_state_ == CHASSIS_STOP) {
   //     StopMotor();
   //     return;
@@ -354,8 +378,21 @@ void Chassis::SetState() {
   //     return;
   // }
 
-  target_speed_ = (board_comm.GetYSpeed() / 2000.0f) * 2.0f;
+  target_speed_ = (remote.GetCh3() / 660.0f) * 2.f;
   target_dist_ += target_speed_ * dt_;
+  if (remote.GetS2() == 2 || remote.GetS2() == 3) {
+    target_dist_ = 0.0f;
+    lqr_left_.SetNowDist(0.0f);
+    lqr_right_.SetNowDist(0.0f);
+  }
+
+  if (remote.GetS1() == 3) {
+    ready_jump = 1;
+  }
+  if (remote.GetS1() == 2 && ready_jump == 1) {
+    jump_state_ = true;
+    ready_jump = 0;
+  }
 }
 
 float Chassis::GetLeftWheel() {

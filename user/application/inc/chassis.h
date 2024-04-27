@@ -19,6 +19,7 @@
 #ifdef __cplusplus
 
 /* Includes ------------------------------------------------------------------*/
+#include "leg.h"
 #include "lqr.h"
 #include "mf9025.h"
 #include "pid.h"
@@ -29,9 +30,9 @@
 #define RAD_2_DEGREE 57.2957795f     // 180/pi
 #define DEGREE_2_RAD 0.01745329252f  // pi/180
 
-#define CENTER_IMU_W 0.0923f
+#define CENTER_IMU_W 0.0827f
 #define CENTER_IMU_L 0.0f
-#define CENTER_IMU_H 0.052f
+#define CENTER_IMU_H 0.035f
 
 #define VEL_PROCESS_NOISE 25   // 速度过程噪声
 #define VEL_MEASURE_NOISE 800  // 速度测量噪声
@@ -69,12 +70,13 @@ class Chassis {
  public:
   Unitree_Motor lf_joint_, lb_joint_, rf_joint_, rb_joint_;
   Mf9025 l_wheel_, r_wheel_;
+  void Observer();
   void SetLegData();
   void SetLQRData();
   void SetTargetYaw(float _pos);
   void MotorInit();
   void PidInit();
-  void Ctrl();
+  void Controller();
   void VMCLegCalc();
   void VMCTorCalc();
   void LQRCalc();
@@ -83,6 +85,7 @@ class Chassis {
   void SetLegLen();
   void SpeedCalc();
   void SynthesizeMotion();
+  void Jump();
   float GetLeftWheel();
   float GetRightWheel();
   float GetLFJoint();
@@ -99,6 +102,7 @@ class Chassis {
   uint8_t GetChassisState() { return chassis_state_; }
 
  private:
+  Leg left_leg_, right_leg_;
   Vmc vmc_left_, vmc_right_;
   Lqr lqr_left_, lqr_right_;
   Pid left_leg_len_, right_leg_len_, anti_crash_, roll_ctrl_, yaw_pos_,
@@ -106,11 +110,10 @@ class Chassis {
   float left_target_len_, right_target_len_, left_leg_F_, right_leg_F_;
   float l_wheel_T_, r_wheel_T_, left_leg_T_, right_leg_T_;
   float target_speed_, target_dist_, target_yaw_, vel_, dist_, pitch_, acc_;
-  float left_w_wheel_, right_w_wheel_;
-  float vel_m, left_v_body_, right_v_body_;
-  float vel_predict_, vel_cov_;
+  float vel_m, left_v_body_, right_v_body_, left_w_wheel_, right_w_wheel_;
+  float jump_start_time_, jump_now_time_;
   uint32_t dwt_cnt_;
-  bool jump_state;
+  bool jump_state_ = false, last_jump_state_ = false;
   float dt_;
   uint8_t robot_state_;
   uint8_t chassis_state_;
