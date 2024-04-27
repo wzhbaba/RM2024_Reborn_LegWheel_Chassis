@@ -199,7 +199,7 @@ typedef struct {
 
 class Unitree_Motor {
  public:
-  void Init(UART_HandleTypeDef* _p_huart, uint8_t _id, uint8_t _mode);
+  void Init(UART_HandleTypeDef* _p_huart, uint8_t _id, uint8_t _mode, float _ang_bias);
   int SendData();
   void SetMotorData(float _Pos, float _T, float _W, float _K_P, float _K_W);
   void SetMotorPos(float _Pos);
@@ -218,6 +218,7 @@ class Unitree_Motor {
   uint16_t pin_;
   MOTOR_send motor_send_;
   MOTOR_recv motor_recv_;
+  float ang_bias_;
 };
 
 /* Exported variables --------------------------------------------------------*/
