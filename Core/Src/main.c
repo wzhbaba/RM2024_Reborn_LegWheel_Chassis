@@ -103,6 +103,7 @@ int main(void)
   MX_SPI2_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   DWT_Init(168);
   while (BMI088_init(&hspi2, 1) != BMI088_NO_ERROR)
