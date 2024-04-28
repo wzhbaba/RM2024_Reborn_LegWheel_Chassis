@@ -14,8 +14,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "vmc.h"
-#include "bsp_dwt.h"
-#include "user_lib.h"
+#include "arm_math.h"
 /* Private macro -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Private types -------------------------------------------------------------*/
@@ -26,53 +25,6 @@ const float k_joint_len = 0.14f;
 const float k_m_wheel = 0.753f;
 /* External variables --------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-
-/**
- * @brief Sets the value of phi0.
- *
- * This function is used to set the value of phi0 in the Vmc class.
- *
- * @param _phi0 The new value of phi0.
- */
-void Vmc::SetPhi(const float _phi) {
-  phi_ = _phi;
-}
-
-/**
- * @brief Sets the value of phi1 and its speed.
- *
- * @param _phi1 The value of phi1.
- * @param _w_phi1 The speed of phi1.
- */
-void Vmc::SetPhi1(const float _phi1, const float _w_phi1) {
-  phi1_ = _phi1;
-  w_phi1_ = _w_phi1;
-}
-
-/**
- * @brief Sets the value of phi4 and its speed.
- *
- * @param _phi4 The value of phi4.
- * @param _w_phi4 The speed of phi4.
- */
-void Vmc::SetPhi4(const float _phi4, const float _w_phi4) {
-  phi4_ = _phi4;
-  w_phi4_ = _w_phi4;
-}
-
-void Vmc::SetTor(const float _F, const float Tp) {
-  F_ = _F;
-  Tp_ = Tp;
-}
-
-void Vmc::SetMeasureTor(const float _T1, const float _T2) {
-  mea_t1_ = _T1;
-  mea_t2_ = _T2;
-}
-
-void Vmc::SetMeasureAccelZ(const float _ddot_z_M) {
-  ddot_z_M_ = _ddot_z_M;
-}
 
 /**
  * @brief 根据关节角度和角速度,计算单杆长度和角度以及变化率
@@ -150,84 +102,30 @@ void Vmc::LegCalc() {
  * @brief Calculate the torque for Vmc.
  */
 void Vmc::TorCalc() {
-  float phi23 = arm_sin_f32(phi2_ - phi3_);
+  float phi32 = arm_sin_f32(phi3_ - phi2_);
   float phi03 = phi0_ - phi3_;
   float phi02 = phi0_ - phi2_;
-  float F_m_L = F_ * l0_;
-  T1_ = -(k_thigh_len * arm_sin_f32(phi1_ - phi2_)) *
-        (F_m_L * arm_sin_f32(phi03) + Tp_ * arm_cos_f32(phi03)) / (l0_ * phi23);
-  T2_ = -(k_thigh_len * arm_sin_f32(phi3_ - phi4_)) *
-        (F_m_L * arm_sin_f32(phi02) + Tp_ * arm_cos_f32(phi02)) / (l0_ * phi23);
+
+  j_[0] = k_thigh_len * arm_sin_f32(phi03) * arm_sin_f32(phi1_ - phi2_) / phi32;
+  j_[1] = k_thigh_len * arm_cos_f32(phi03) * arm_sin_f32(phi1_ - phi2_) /
+          (l0_ * phi32);
+  j_[2] = k_thigh_len * arm_sin_f32(phi02) * arm_sin_f32(phi3_ - phi4_) / phi32;
+  j_[3] = k_thigh_len * arm_cos_f32(phi02) * arm_sin_f32(phi3_ - phi4_) /
+          (l0_ * phi32);
+
+  T1_ = j_[0] * F_ + j_[1] * Tp_;
+  T2_ = j_[2] * F_ + j_[3] * Tp_;
 }
 
 void Vmc::LegForceCalc() {
-  float phi23 = arm_sin_f32(phi2_ - phi3_);
-  float phi03 = phi0_ - phi3_;
-  float phi02 = phi0_ - phi2_;
+  float det = j_[0] * j_[3] - j_[1] * j_[2];
+  inv_j_[0] = j_[3] / det;
+  inv_j_[1] = -j_[1] / det;
+  inv_j_[2] = -j_[2] / det;
+  inv_j_[3] = j_[0] / det;
 
-  mea_F_ =
-      -arm_cos_f32(phi02) * mea_t1_ / k_thigh_len * arm_sin_f32(phi1_ - phi2_) +
-      arm_cos_f32(phi03) * mea_t2_ / k_thigh_len * arm_sin_f32(phi3_ - phi4_);
-  mea_Tp_ = l0_ * arm_sin_f32(phi02) * mea_t1_ / k_thigh_len *
-                arm_sin_f32(phi1_ - phi2_) -
-            l0_ * arm_sin_f32(phi03) * mea_t2_ / k_thigh_len *
-                arm_sin_f32(phi3_ - phi4_);
-  P_ = mea_F_ * arm_cos_f32(theta_) + mea_Tp_ * arm_sin_f32(theta_) / l0_;
-  F_N_ = P_ + k_m_wheel * (9.8f + ddot_z_w_);
-}
-
-/**
- * @brief Get the value of T1.
- *
- * @return The value of T1.
- */
-float Vmc::GetT1() {
-  return T1_;
-}
-
-/**
- * @brief Get the value of T2.
- *
- * @return The value of T2 as a float.
- */
-float Vmc::GetT2() {
-  return T2_;
-}
-
-/**
- * @brief Get the value of theta.
- *
- * @return The value of theta.
- */
-float Vmc::GetTheta() {
-  return theta_;
-}
-
-/**
- * @brief Returns the value of dot theta.
- *
- * @return The value of dot theta.
- */
-float Vmc::GetDotTheta() {
-  return w_theta_;
-}
-
-float Vmc::GetLegLen() {
-  return l0_;
-}
-
-float Vmc::GetLegSpeed() {
-  return v_l0_;
-}
-
-float Vmc::GetPhi0() {
-  return phi0_;
-}
-
-float Vmc::GetPhi2Speed() {
-  return w_phi2_;
-}
-
-float Vmc::GetForceNormal() {
-  return F_N_;
+  mea_F_ = inv_j_[0] * mea_t1_ + inv_j_[1] * mea_t2_;
+  mea_Tp_ = inv_j_[2] * mea_t1_ + inv_j_[3] * mea_t2_;
+  p_ = mea_F_ * arm_cos_f32(theta_) + mea_Tp_ * arm_sin_f32(theta_) / l0_;
+  F_N_ = p_ + k_m_wheel * (9.8f + ddot_z_w_);
 }
