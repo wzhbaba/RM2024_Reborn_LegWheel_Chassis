@@ -30,6 +30,7 @@
 class Vmc {
  public:
   void LegCalc();
+  void Jacobian();
   void TorCalc();
   void LegForceCalc();
   void SetBodyData(const float _phi, const float _acc_z) {

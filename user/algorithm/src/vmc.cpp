@@ -102,6 +102,11 @@ void Vmc::LegCalc() {
  * @brief Calculate the torque for Vmc.
  */
 void Vmc::TorCalc() {
+  T1_ = j_[0] * F_ + j_[1] * Tp_;
+  T2_ = j_[2] * F_ + j_[3] * Tp_;
+}
+
+void Vmc::Jacobian() {
   float phi32 = arm_sin_f32(phi3_ - phi2_);
   float phi03 = phi0_ - phi3_;
   float phi02 = phi0_ - phi2_;
@@ -112,9 +117,6 @@ void Vmc::TorCalc() {
   j_[2] = k_thigh_len * arm_sin_f32(phi02) * arm_sin_f32(phi3_ - phi4_) / phi32;
   j_[3] = k_thigh_len * arm_cos_f32(phi02) * arm_sin_f32(phi3_ - phi4_) /
           (l0_ * phi32);
-
-  T1_ = j_[0] * F_ + j_[1] * Tp_;
-  T2_ = j_[2] * F_ + j_[3] * Tp_;
 }
 
 void Vmc::LegForceCalc() {
