@@ -18,6 +18,7 @@
 #include "board_comm.h"
 #include "bsp_dwt.h"
 #include "chassis.h"
+#include "referee.h"
 #include "remote.h"
 /* Private macro -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
@@ -28,18 +29,19 @@
 
 void ChassisMotorInit() {
   board_comm.Init(&hcan1, 0x411);
-  RemoteControlInit(&huart3);
+  remote.Init(&huart3);
+  referee.Init(&huart5);
   chassis.MotorInit();
   chassis.PidInit();
   chassis.SpeedEstInit();
 }
 
+void ChassisObserverTask() {
+  chassis.Observer();
+}
+
 void ChassisCalcTask() {
   chassis.Controller();
-  // if (chassis.GetState() == ROBOT_STOP || chassis.GetChassisState() ==
-  // CHASSIS_STOP || chassis.GetChassisState() == CHASSIS_RESET) {
-  //     return;
-  // }
   if (remote.GetS2() == 1) {
     chassis.SetMotorTor();
   } else {
