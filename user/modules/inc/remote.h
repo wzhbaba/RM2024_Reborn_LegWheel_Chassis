@@ -41,6 +41,7 @@ struct DR16DatePack_t {
 class Remote_t
 {
    public:
+   void Init(UART_HandleTypeDef *_phuart);
     UartInstance *premote_instance;
     void SbusToRc(uint8_t *_pdata);
 

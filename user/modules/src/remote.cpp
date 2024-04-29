@@ -70,7 +70,7 @@ static void RemoteControlCallBack()
  *
  * @param _phuart Pointer to the UART handle structure.
  */
-void RemoteControlInit(UART_HandleTypeDef *_phuart)
+void Remote_t::Init(UART_HandleTypeDef *_phuart)
 {
     UartInitConfig conf;
     conf.huart = _phuart;
