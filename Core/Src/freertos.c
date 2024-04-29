@@ -119,26 +119,24 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of insTask */
-  osThreadDef(insTask, StartInsTask, osPriorityAboveNormal, 0, 1024);
+  osThreadDef(insTask, StartInsTask, osPriorityRealtime, 0, 512);
   insTaskHandle = osThreadCreate(osThread(insTask), NULL);
 
-  /* definition and creation of legMotorTask */
-  osThreadDef(legMotorTask, StartLegMotorTask, osPriorityNormal, 0, 512);
-  legMotorTaskHandle = osThreadCreate(osThread(legMotorTask), NULL);
-
   /* definition and creation of wheelMotorTask */
-  osThreadDef(wheelMotorTask, StartWheelMotorTask, osPriorityNormal, 0, 128);
+  osThreadDef(wheelMotorTask, StartWheelMotorTask, osPriorityHigh, 0, 128);
   wheelMotorTaskHandle = osThreadCreate(osThread(wheelMotorTask), NULL);
 
   /* definition and creation of chassisTask */
-  osThreadDef(chassisTask, StartChassisTask, osPriorityNormal, 0, 512);
+  osThreadDef(chassisTask, StartChassisTask, osPriorityNormal, 0, 1024);
   chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
 
   /* definition and creation of observerTask */
-  osThreadDef(observerTask, StartObserverTask, osPriorityNormal, 0, 1024);
+  osThreadDef(observerTask, StartObserverTask, osPriorityAboveNormal, 0, 1024);
   observerTaskHandle = osThreadCreate(osThread(observerTask), NULL);
 
-
+  /* definition and creation of legMotorTask */
+  osThreadDef(legMotorTask, StartLegMotorTask, osPriorityHigh, 0, 512);
+  legMotorTaskHandle = osThreadCreate(osThread(legMotorTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
