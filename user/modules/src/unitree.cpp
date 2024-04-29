@@ -87,7 +87,7 @@ void Unitree_Motor::SetMotorPos(float _Pos) {
  * @param _T The torque value to be set.
  */
 void Unitree_Motor::SetMotorT(float _T) {
-  SetMotorData(0, Math::AbsLimit(_T, 30.f) / 9.1f, 0, 0, 0.1f);
+  SetMotorData(0, Math::AbsLimit(_T, 30.f) / 9.1f, 0, 0, 0.5f);
 }
 
 /**
