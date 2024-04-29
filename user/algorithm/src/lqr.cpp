@@ -14,6 +14,8 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "lqr.h"
+
+#include "stdint.h"
 /* Private macro -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Private types -------------------------------------------------------------*/
@@ -34,37 +36,6 @@ const float k_fly[12][3] = {
     0.0f, 0.0f, 0.0f,       0.0f};
 /* External variables --------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-
-void Lqr::SetData(float _dist, float _speed, float _phi, float _w_phi,
-                  float _theta, float _w_theta, float _leg_len) {
-  dist_ = _dist;
-  speed_ = _speed;
-  phi_ = _phi;
-  w_phi_ = _w_phi;
-  theta_ = _theta;
-  w_theta_ = _w_theta;
-  leg_len_ = _leg_len;
-}
-
-void Lqr::SetDist(float _dist) {
-  target_dist_ = _dist;
-}
-
-void Lqr::SetSpeed(float _speed) {
-  target_speed_ = _speed;
-}
-
-void Lqr::SetForceNormal(float _F_N) {
-  F_N_ = _F_N;
-}
-
-float Lqr::GetWheelTor() {
-  return T[0];
-}
-
-float Lqr::GetLegTor() {
-  return T[1];
-}
 
 void Lqr::Calc() {
   float lsqr = leg_len_ * leg_len_;
