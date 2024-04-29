@@ -17,17 +17,6 @@
 #define __INFANTRY_CHASSIS_H_
 
 #ifdef __cplusplus
-
-/* Includes ------------------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
-/* Exported types ------------------------------------------------------------*/
-/* Exported variables --------------------------------------------------------*/
-/* Exported function prototypes ----------------------------------------------*/
-
-#endif
-
-#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -41,6 +30,7 @@ void ChassisMotorInit();
 void UnitreeMotorTask();
 void WheelMotorTask();
 void ChassisCalcTask();
+void ChassisObserverTask();
 
 #ifdef __cplusplus
 }
