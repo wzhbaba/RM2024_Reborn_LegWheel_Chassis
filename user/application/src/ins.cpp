@@ -48,8 +48,8 @@ static void InitQuaternion(float* init_q4) {
   // 读取100次加速度计数据,取平均值作为初始值
   for (uint8_t i = 0; i < 100; ++i) {
     BMI088_Read(&BMI088);
-    acc_init[X] += BMI088.Accel[X];
-    acc_init[Y] += BMI088.Accel[Y];
+    acc_init[X] += BMI088.Accel[Y];
+    acc_init[Y] -= BMI088.Accel[X];
     acc_init[Z] += BMI088.Accel[Z];
     DWT_Delay(0.001);
   }
