@@ -22,7 +22,7 @@
 const float k_thigh_len = 0.15f;
 const float k_calf_len = 0.25f;
 const float k_joint_len = 0.14f;
-const float k_m_wheel = 0.753f;
+const float k_m_wheel = 0.47f;
 /* External variables --------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 
