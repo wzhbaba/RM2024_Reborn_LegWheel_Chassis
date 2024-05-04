@@ -89,11 +89,11 @@ class Chassis {
   KalmanFilter_t kf;
   Vmc left_leg_, right_leg_;
   Lqr lqr_left_, lqr_right_;
-  Pid left_leg_len_, right_leg_len_, anti_crash_, roll_ctrl_ ,yaw_pos_, yaw_speed_;
-  float left_target_len_, right_target_len_, left_leg_F_, right_leg_F_,
-      roll_comp;
-  float l_wheel_T_, r_wheel_T_, left_leg_T_, right_leg_T_, turn_T_;
-  float target_speed_, target_yaw_, vel_, dist_, pitch_, acc_;
+  Pid left_leg_len_, right_leg_len_, anti_crash_, roll_ctrl_, yaw_pos_,
+      yaw_speed_;
+  float left_leg_F_, right_leg_F_, roll_comp;
+  float l_wheel_T_, r_wheel_T_, left_leg_T_, right_leg_T_;
+  float target_speed_, target_yaw_, vel_, dist_, acc_;
   float vel_m, left_v_body_, right_v_body_, left_w_wheel_, right_w_wheel_;
   float jump_start_time_, jump_now_time_;
   uint32_t dwt_cnt_controller_, dwt_cnt_observer;

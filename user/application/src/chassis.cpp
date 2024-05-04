@@ -34,8 +34,8 @@ const float k_phi4_bias = -0.724f;
 
 const float k_lf_joint_bias = 0.7236f;
 const float k_lb_joint_bias = 2.941f;
-const float k_rf_joint_bias = 3.2489f;
-const float k_rb_joint_bias = 2.552f;
+const float k_rf_joint_bias = 3.3689f;
+const float k_rb_joint_bias = 2.492f;
 
 const float k_jump_force = 200.0f;
 const float k_jump_time = 0.15f;
@@ -310,14 +310,16 @@ void Chassis::SpeedCalc() {
       -r_wheel_.GetSpeed() + right_leg_.GetPhi2Speed() - INS.Gyro[X];
 
   left_v_body_ = left_w_wheel_ * k_wheel_radius +
-                 left_leg_.GetLegLen() * left_leg_.GetDotTheta() *
-                     arm_cos_f32(left_leg_.GetTheta()) +
+                 left_leg_.GetLegLen() * left_leg_.GetDotTheta() +
                  left_leg_.GetLegSpeed() * arm_sin_f32(left_leg_.GetTheta());
   right_v_body_ = right_w_wheel_ * k_wheel_radius +
-                  right_leg_.GetLegLen() * right_leg_.GetDotTheta() *
-                      arm_cos_f32(right_leg_.GetTheta()) +
+                  right_leg_.GetLegLen() * right_leg_.GetDotTheta() +
                   right_leg_.GetLegSpeed() * arm_sin_f32(right_leg_.GetTheta());
   vel_m = (left_v_body_ + right_v_body_) / 2;
+  if (left_leg_.GetForceNormal() < 20.0f &&
+      right_leg_.GetForceNormal() < 20.0f) {
+    vel_m = 0;
+  }
 
   // 使用kf同时估计加速度和速度,滤波更新
   kf.MeasuredVector[0] = vel_m;
