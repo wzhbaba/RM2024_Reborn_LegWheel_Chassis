@@ -38,10 +38,11 @@ void Mf9025::Update() {
     encode_ =
         p_motor_instance_->rx_buff[7] << 8 | p_motor_instance_->rx_buff[6];
   }
+  speed_real_ = 0.15f * speed_real_ + 0.85f * speed_ * 3.1415926f / 180.0f;
 }
 
 void Mf9025::SetTor(float _tor) {
-  iq_ctrl_ = (_tor / 0.32f) * 62.5f;
+  iq_ctrl_ = _tor / 0.00512f;
   iq_ctrl_ = (int16_t)Math::AbsLimit(iq_ctrl_, 2000);
 }
 
@@ -59,6 +60,5 @@ void Mf9025::Send() {
 }
 
 float Mf9025::GetSpeed() {
-  speed_real_ = 0.15f * speed_real_ + 0.85f * speed_ * 3.1415926f / 180.0f;
   return speed_real_;
 }
