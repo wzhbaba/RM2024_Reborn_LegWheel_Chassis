@@ -50,7 +50,7 @@ class BoardComm {
  public:
   int16_t GetXSpeed() { return rece_.x_speed; };
   int16_t GetYSpeed() { return rece_.y_speed; };
-  int16_t GetWSpeed() { return rece_.w_speed; };
+  float GetWSpeed() { return rece_.w_speed; };
   uint8_t GetShootFlag() { return rece_.shoot_flag; };
   uint8_t GetFricFlag() { return rece_.fric_flag; };
   uint8_t GetAimFlag() { return rece_.aim_flag; };
