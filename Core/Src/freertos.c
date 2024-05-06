@@ -127,11 +127,11 @@ void MX_FREERTOS_Init(void) {
   wheelMotorTaskHandle = osThreadCreate(osThread(wheelMotorTask), NULL);
 
   /* definition and creation of chassisTask */
-  osThreadDef(chassisTask, StartChassisTask, osPriorityAboveNormal, 0, 256);
+  osThreadDef(chassisTask, StartChassisTask, osPriorityAboveNormal, 0, 512);
   chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
 
   /* definition and creation of legMotorTask */
-  osThreadDef(legMotorTask, StartLegMotorTask, osPriorityRealtime, 0, 512);
+  osThreadDef(legMotorTask, StartLegMotorTask, osPriorityRealtime, 0, 1024);
   legMotorTaskHandle = osThreadCreate(osThread(legMotorTask), NULL);
 
   /* definition and creation of ctrlcommTask */
