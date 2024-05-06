@@ -20,6 +20,7 @@
 #include "chassis.h"
 #include "referee.h"
 #include "remote.h"
+#include "cmsis_os.h"
 /* Private macro -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Private types -------------------------------------------------------------*/
@@ -28,16 +29,12 @@
 /* Private function prototypes -----------------------------------------------*/
 
 void ChassisMotorInit() {
-  board_comm.Init(&hcan1, 0x411);
   remote.Init(&huart3);
   referee.Init(&huart5);
   chassis.MotorInit();
+  board_comm.Init(&hcan2, 0x101);
   chassis.PidInit();
   chassis.SpeedEstInit();
-}
-
-void ChassisObserverTask() {
-  chassis.Observer();
 }
 
 void ChassisCalcTask() {
@@ -52,6 +49,7 @@ void ChassisCalcTask() {
 void UnitreeMotorTask() {
   chassis.lf_joint_.Ctrl();
   chassis.rf_joint_.Ctrl();
+  osDelay(1);
   chassis.lb_joint_.Ctrl();
   chassis.rb_joint_.Ctrl();
 }
@@ -59,4 +57,8 @@ void UnitreeMotorTask() {
 void WheelMotorTask() {
   chassis.l_wheel_.Send();
   chassis.r_wheel_.Send();
+}
+
+void CtrlCommTask() {
+  board_comm.Send();
 }

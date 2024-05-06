@@ -30,7 +30,7 @@ void ChassisMotorInit();
 void UnitreeMotorTask();
 void WheelMotorTask();
 void ChassisCalcTask();
-void ChassisObserverTask();
+void CtrlCommTask();
 
 #ifdef __cplusplus
 }
