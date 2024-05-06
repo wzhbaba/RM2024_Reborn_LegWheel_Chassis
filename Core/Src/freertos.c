@@ -53,8 +53,8 @@ osThreadId defaultTaskHandle;
 osThreadId insTaskHandle;
 osThreadId wheelMotorTaskHandle;
 osThreadId chassisTaskHandle;
-osThreadId observerTaskHandle;
 osThreadId legMotorTaskHandle;
+osThreadId ctrlcommTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -65,8 +65,8 @@ void StartDefaultTask(void const * argument);
 void StartInsTask(void const * argument);
 void StartWheelMotorTask(void const * argument);
 void StartChassisTask(void const * argument);
-void StartObserverTask(void const * argument);
 void StartLegMotorTask(void const * argument);
+void StartCtrlCommTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -127,16 +127,16 @@ void MX_FREERTOS_Init(void) {
   wheelMotorTaskHandle = osThreadCreate(osThread(wheelMotorTask), NULL);
 
   /* definition and creation of chassisTask */
-  osThreadDef(chassisTask, StartChassisTask, osPriorityAboveNormal, 0, 1024);
+  osThreadDef(chassisTask, StartChassisTask, osPriorityAboveNormal, 0, 256);
   chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
 
-  /* definition and creation of observerTask */
-  osThreadDef(observerTask, StartObserverTask, osPriorityAboveNormal, 0, 1024);
-  observerTaskHandle = osThreadCreate(osThread(observerTask), NULL);
-
   /* definition and creation of legMotorTask */
-  osThreadDef(legMotorTask, StartLegMotorTask, osPriorityHigh, 0, 512);
+  osThreadDef(legMotorTask, StartLegMotorTask, osPriorityRealtime, 0, 512);
   legMotorTaskHandle = osThreadCreate(osThread(legMotorTask), NULL);
+
+  /* definition and creation of ctrlcommTask */
+  osThreadDef(ctrlcommTask, StartCtrlCommTask, osPriorityNormal, 0, 128);
+  ctrlcommTaskHandle = osThreadCreate(osThread(ctrlcommTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -231,50 +231,50 @@ void StartChassisTask(void const * argument)
   /* USER CODE END StartChassisTask */
 }
 
-/* USER CODE BEGIN Header_StartObserverTask */
+/* USER CODE BEGIN Header_StartLegMotorTask */
 /**
- * @brief Function implementing the observerTask thread.
+ * @brief Function implementing the legMotorTask thread.
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_StartObserverTask */
-void StartObserverTask(void const * argument)
-{
-  /* USER CODE BEGIN StartObserverTask */
-  static float observer_start;
-  static float observer_dt;
-
-  /* Infinite loop */
-  for (;;) {
-    observer_start = DWT_GetTimeline_ms();
-    ChassisObserverTask();
-    observer_dt = DWT_GetTimeline_ms() - observer_start;
-    osDelay(1);
-  }
-  /* USER CODE END StartObserverTask */
-}
-
-/* USER CODE BEGIN Header_StartLegMotorTask */
-/**
-* @brief Function implementing the legMotorTask thread.
-* @param argument: Not used
-* @retval None
-*/
 /* USER CODE END Header_StartLegMotorTask */
 void StartLegMotorTask(void const * argument)
 {
   /* USER CODE BEGIN StartLegMotorTask */
-    static float leg_start;
-    static float leg_dt;
+  static float leg_start;
+  static float leg_dt;
 
-    /* Infinite loop */
-    for (;;) {
-        leg_start = DWT_GetTimeline_ms();
-        UnitreeMotorTask();
-        leg_dt = DWT_GetTimeline_ms() - leg_start;
-        osDelay(1);
-    }
+  /* Infinite loop */
+  for (;;) {
+    leg_start = DWT_GetTimeline_ms();
+    UnitreeMotorTask();
+    leg_dt = DWT_GetTimeline_ms() - leg_start;
+    osDelay(1);
+  }
   /* USER CODE END StartLegMotorTask */
+}
+
+/* USER CODE BEGIN Header_StartCtrlCommTask */
+/**
+ * @brief Function implementing the ctrlcommTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartCtrlCommTask */
+void StartCtrlCommTask(void const * argument)
+{
+  /* USER CODE BEGIN StartCtrlCommTask */
+  static float ctrl_start;
+  static float ctrl_dt;
+
+  /* Infinite loop */
+  for (;;) {
+    ctrl_start = DWT_GetTimeline_ms();
+    CtrlCommTask();
+    ctrl_dt = DWT_GetTimeline_ms() - ctrl_start;
+    osDelay(5);
+  }
+  /* USER CODE END StartCtrlCommTask */
 }
 
 /* Private application code --------------------------------------------------*/
