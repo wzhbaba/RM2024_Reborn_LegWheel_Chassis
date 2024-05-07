@@ -23,47 +23,39 @@
 /* Exported macro ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 typedef enum {
-    RELATIVE_FLAG = 0,
-    ABSOLUTE_FLAG = 1,
+  RELATIVE_FLAG = 0,
+  ABSOLUTE_FLAG = 1,
 } Pos_Flag;
 
 /* Exported types ------------------------------------------------------------*/
 
-class DjiMotor
-{
-   public:
-    CanInstance *pdji_motor_instance;
-    void Update();
-    void Init(uint32_t _idx, CAN_HandleTypeDef *_phcan, uint8_t _init);
-    float GetAngle()
-    {
-        return ang_real_;
-    }
-    int GetEncode()
-    {
-        return encode_;
-    }
-    int GetSpd()
-    {
-        return spd_;
-    }
+class DjiMotor {
+ public:
+  CanInstance* pdji_motor_instance;
+  void Update();
+  void Init(uint32_t _idx, CAN_HandleTypeDef* _phcan, uint8_t _init);
+  float GetAngle() { return ang_real_; }
+  int GetEncode() { return encode_; }
+  int GetSpd() { return spd_; }
+  void SetOffest(int16_t _offest) { encode_offest_ = _offest; }
 
-   private:
-    int16_t round_cnt_;
-    int16_t encode_;
-    int16_t encode_offest_;
-    int16_t last_encode_;
-    int16_t spd_;
-    int16_t tor_;
-    int16_t temp_;
-    uint8_t init_;
-    float ang_real_;
+ private:
+  int16_t round_cnt_;
+  int16_t encode_;
+  int16_t encode_offest_;
+  int16_t last_encode_;
+  int16_t spd_;
+  int16_t tor_;
+  int16_t temp_;
+  uint8_t init_;
+  float ang_real_;
 };
 /* Exported variables --------------------------------------------------------*/
 extern DjiMotor dji_motor;
 /* Exported function prototypes ----------------------------------------------*/
 
-void DjiMotorSend(CAN_HandleTypeDef *_phcan, uint32_t _idx, int16_t _data1, int16_t _data2, int16_t _data3, int16_t _data4);
+void DjiMotorSend(CAN_HandleTypeDef* _phcan, uint32_t _idx, int16_t _data1,
+                  int16_t _data2, int16_t _data3, int16_t _data4);
 
 #endif
 
