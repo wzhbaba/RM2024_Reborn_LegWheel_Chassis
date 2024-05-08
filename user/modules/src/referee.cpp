@@ -16,7 +16,7 @@
 #include "referee.h"
 
 #include "board_comm.h"
-#include "crc.h"
+#include "crc_def.h"
 #include "string.h"
 /* Private macro -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
