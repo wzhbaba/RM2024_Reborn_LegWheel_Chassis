@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file      : CRC.h
+ * @file      : crc_def.h
  * @brief     :
  * @history   :
  *  Version     Date            Author          Note
@@ -16,10 +16,8 @@
 #ifndef __CRC_H_
 #define __CRC_H_
 
-#ifdef __cplusplus
-
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
+#include "stdint.h"
 /* Exported macro ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
@@ -39,22 +37,5 @@ uint16_t Get_CRC16_Check_Sum(uint8_t *pchMessage, uint32_t dwLength, uint16_t wC
 void Append_CRC32_Check_Sum(uint32_t *pchMessage, uint32_t dwLength);
 uint32_t Verify_CRC32_Check_Sum(uint32_t *pchMessage, uint32_t dwLength);
 uint32_t Get_CRC32_Check_Sum(uint32_t *pchMessage, uint32_t dwLength);
-
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Includes ------------------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
-/* Exported types ------------------------------------------------------------*/
-/* Exported variables --------------------------------------------------------*/
-/* Exported function prototypes ----------------------------------------------*/
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __FILE_H_ */
