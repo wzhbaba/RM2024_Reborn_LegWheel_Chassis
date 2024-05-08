@@ -87,7 +87,7 @@ void Unitree_Motor::SetMotorPos(float _Pos) {
  * @param _T The torque value to be set.
  */
 void Unitree_Motor::SetMotorT(float _T) {
-  SetMotorData(0, Math::AbsLimit(_T, 30.f) / 9.1f, 0, 0, 1.0f);
+  SetMotorData(0, Math::AbsLimit(_T, 30.f) / 9.1f, 0, 0, 0.8f);
 }
 
 /**
@@ -110,7 +110,7 @@ int Unitree_Motor::SendData() {
   motor_send_.ComData.Mdata.K_P = motor_send_.K_P * 2048;
   motor_send_.ComData.Mdata.K_W = motor_send_.K_W * 1024;
   motor_send_.ComData.CRC32 =
-      Get_CRC32_Check_Sum((uint32_t*)&motor_send_.ComData, 7);
+      HAL_CRC_Calculate(&hcrc, (uint32_t*)&motor_send_.ComData, 7);
 
   return 0;
 }
@@ -126,7 +126,7 @@ int Unitree_Motor::SendData() {
  */
 int Unitree_Motor::Update(uint8_t* pData) {
   if (motor_recv_.ServoData.CRCdata ==
-      Get_CRC32_Check_Sum((uint32_t*)(pData), 18)) {
+      HAL_CRC_Calculate(&hcrc, (uint32_t*)(pData), 18)) {
     motor_recv_.motor_id = motor_recv_.ServoData.head.motorID;
     motor_recv_.mode = motor_recv_.ServoData.Mdata.mode;
     motor_recv_.Temp = motor_recv_.ServoData.Mdata.Temp;
@@ -151,11 +151,10 @@ int Unitree_Motor::Update(uint8_t* pData) {
 void Unitree_Motor::Ctrl() {
   SendData();
   HAL_GPIO_WritePin(p_port_, pin_, GPIO_PIN_SET);
-  HAL_UART_Transmit(p_huart_, (uint8_t*)&motor_send_.ComData,
-                    sizeof(motor_send_.ComData), 10);
-  HAL_GPIO_WritePin(p_port_, pin_, GPIO_PIN_RESET);
-  HAL_UARTEx_ReceiveToIdle_DMA(p_huart_, (uint8_t*)&motor_recv_.ServoData,
-                               sizeof(motor_recv_.ServoData));
+  HAL_UART_Transmit_DMA(p_huart_, (uint8_t*)&motor_send_.ComData,
+                        sizeof(motor_send_.ComData));
+  HAL_UART_Receive_DMA(p_huart_, (uint8_t*)&motor_recv_.ServoData,
+                       sizeof(motor_recv_.ServoData));
 
   uint8_t* rp = (uint8_t*)&motor_recv_.ServoData;
   if (rp[0] == 0xFE && rp[1] == 0xEE) {
@@ -173,4 +172,15 @@ float Unitree_Motor::GetSpeed() {
 
 float Unitree_Motor::GetTor() {
   return motor_recv_.T * 9.1f;
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart) {
+  // same as the operation in Sendcommand(), we need to change the huart to
+  // receive mode
+  if (huart == &huart1) {
+    HAL_GPIO_WritePin(RS485_DIR1_GPIO_Port, RS485_DIR1_Pin, GPIO_PIN_RESET);
+  }
+  if (huart == &huart2) {
+    HAL_GPIO_WritePin(RS485_DIR2_GPIO_Port, RS485_DIR2_Pin, GPIO_PIN_RESET);
+  }
 }

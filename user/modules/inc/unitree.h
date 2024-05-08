@@ -59,8 +59,8 @@ typedef struct {
 typedef struct {      // 以 4个字节一组排列 ，不然编译器会凑整
                       // 定义 数据
   uint8_t mode;       // 关节模式选择
-  uint8_t ModifyBit;  // 电机控制参数修改位
-  uint8_t ReadBit;    // 电机控制参数发送位
+  uint8_t ModifyBit = 0xFF;  // 电机控制参数修改位
+  uint8_t ReadBit = 0x00;    // 电机控制参数发送位
   uint8_t reserved;
 
   COMData32 Modify;  // 电机参数修改 的数据
