@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
+#include "crc.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -104,8 +105,9 @@ int main(void)
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_UART5_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
-  DWT_Init(168);
+  DWT_Init(180);
   while (BMI088_init(&hspi2, 1) != BMI088_NO_ERROR)
     ;
   ChassisMotorInit();
