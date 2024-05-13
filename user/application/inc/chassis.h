@@ -21,6 +21,7 @@
 #include "pid.h"
 #include "vmc.h"
 
+#include "dji_motor.h"
 #include "kalman_filter.h"
 #include "mf9025.h"
 #include "unitree.h"
@@ -66,9 +67,9 @@ class Chassis {
  public:
   Unitree_Motor lf_joint_, lb_joint_, rf_joint_, rb_joint_;
   Mf9025 l_wheel_, r_wheel_;
-  void Observer();
+  DjiMotor yaw_motor_;
   void LegCalc();
-  void SetTargetYaw(float _pos);
+  void SetTargetYaw(float _pos) { target_yaw_ = _pos; }
   void MotorInit();
   void PidInit();
   void Controller();
@@ -81,10 +82,10 @@ class Chassis {
   void SpeedEstInit();
   void SetMotorTor();
   void StopMotor();
-  void Reset();
-  void Switch();
+  void SetLegLen();
+  void SetFollow();
   void SetState();
-
+  void SetSpd();
  private:
   KalmanFilter_t kf;
   Vmc left_leg_, right_leg_;
@@ -93,14 +94,14 @@ class Chassis {
       yaw_speed_;
   float left_leg_F_, right_leg_F_, roll_comp;
   float l_wheel_T_, r_wheel_T_, left_leg_T_, right_leg_T_;
-  float target_speed_, target_yaw_, vel_, dist_, acc_;
+  float set_spd_, target_speed_, target_yaw_, target_dist_, vel_, dist_, acc_;
   float vel_m, left_v_body_, right_v_body_, left_w_wheel_, right_w_wheel_;
   float jump_start_time_, jump_now_time_;
   uint32_t dwt_cnt_controller_, dwt_cnt_observer;
   bool jump_state_ = false, last_jump_state_ = false;
   float controller_dt_, observer_dt_;
-  uint8_t robot_state_;
-  uint8_t chassis_state_;
+  int16_t ang_yaw_;
+  uint8_t side_flag_;
 };
 /* Exported variables --------------------------------------------------------*/
 extern Chassis chassis;

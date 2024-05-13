@@ -25,7 +25,7 @@
 /* Private constants ---------------------------------------------------------*/
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-const float k_gravity_comp = 7.3f * 9.8f;
+const float k_gravity_comp = 7.4f * 9.8f;
 const float k_roll_extra_comp_p = 500.0f;
 const float k_wheel_radius = 0.076f;
 
@@ -64,7 +64,7 @@ void Chassis::SpeedEstInit() {
   // 使用kf同时估计速度和加速度
   Kalman_Filter_Init(&kf, 2, 0, 2);
   float F[4] = {1, 0.001, 0, 1};
-  float Q[4] = {VEL_PROCESS_NOISE, 0, 0, 0};
+  float Q[4] = {VEL_PROCESS_NOISE, 0, 0, ACC_MEASURE_NOISE};
   float R[4] = {VEL_MEASURE_NOISE, 0, 0, ACC_MEASURE_NOISE};
   float P[4] = {100000, 0, 0, 100000};
   float H[4] = {1, 0, 0, 1};
@@ -83,10 +83,17 @@ static void RightWheelCallback() {
   chassis.r_wheel_.Update();
 }
 
+static void YawMotorCallback() {
+  chassis.yaw_motor_.Update();
+}
+
 // 电机初始化
 void Chassis::MotorInit() {
   l_wheel_.Init(&hcan2, 0x141);
   r_wheel_.Init(&hcan2, 0x142);
+  yaw_motor_.Init(0x206, &hcan1, ABSOLUTE_FLAG);
+  yaw_motor_.SetOffest(6812);
+  SetTargetYaw(6812);
   lf_joint_.Init(&huart2, 0x01, 10, k_lf_joint_bias);
   lb_joint_.Init(&huart2, 0x00, 10, k_lb_joint_bias);
   rf_joint_.Init(&huart1, 0x01, 10, k_rf_joint_bias);
@@ -94,6 +101,7 @@ void Chassis::MotorInit() {
 
   l_wheel_.p_motor_instance_->pCanCallBack = LeftWheelCallback;
   r_wheel_.p_motor_instance_->pCanCallBack = RightWheelCallback;
+  yaw_motor_.pdji_motor_instance->pCanCallBack = YawMotorCallback;
 }
 
 // PID参数初始化
@@ -102,8 +110,8 @@ void Chassis::PidInit() {
   right_leg_len_.Init(800.0f, 0.0f, 20.0f, 60.0f, 0.0001f);
   anti_crash_.Init(8.0f, 0.0f, 2.0f, 10.0f, 0.001f);
   roll_ctrl_.Init(500.0f, 0.0f, 0.0f, 15.0f, 0.001f);
-  yaw_pos_.Init(0.5f, 0.0f, 0.0f, 5.0f, 0.01f);
-  yaw_speed_.Init(1.0f, 0.0f, 0.0f, 10.0f, 0.0f);
+  yaw_pos_.Init(8.0f, 0.0f, 0.0f, 5.0f, 0.001f);
+  yaw_speed_.Init(16.0f, 0.0f, 0.0f, 20.0f, 0.0f);
   left_leg_len_.Inprovement(PID_CHANGING_INTEGRATION_RATE |
                                 PID_TRAPEZOID_INTEGRAL | PID_DERIVATIVE_FILTER |
                                 PID_DERIVATIVE_ON_MEASUREMENT,
@@ -139,14 +147,6 @@ void Chassis::LegCalc() {
   right_leg_.LegForceCalc();
 }
 
-void Chassis::SetTargetYaw(float _pos) {
-  target_yaw_ += _pos;
-}
-
-void Chassis::Observer() {
-  SpeedCalc();
-}
-
 void Chassis::LQRCalc() {
   lqr_left_.SetSpeed(target_speed_);
   lqr_right_.SetSpeed(target_speed_);
@@ -176,8 +176,6 @@ void Chassis::TorCalc() {
 }
 
 void Chassis::LegLenCalc() {
-  left_leg_len_.SetRef(0.21f);
-  right_leg_len_.SetRef(0.21f);
   left_leg_len_.SetMeasure(left_leg_.GetLegLen());
   right_leg_len_.SetMeasure(right_leg_.GetLegLen());
 
@@ -187,15 +185,8 @@ void Chassis::LegLenCalc() {
 }
 
 void Chassis::SynthesizeMotion() {
-  anti_crash_.SetRef(0.0f);
-  anti_crash_.SetMeasure(left_leg_.GetPhi0() - right_leg_.GetPhi0());
-  anti_crash_.Calculate();
-  left_leg_T_ = lqr_left_.GetLegTor() + anti_crash_.GetOutput();
-  right_leg_T_ = lqr_right_.GetLegTor() - anti_crash_.GetOutput();
-
-  SetTargetYaw(((-remote.GetCh0() / 660.0f) * 1000.0f) * 0.001f);
-  yaw_pos_.SetRef(target_yaw_);
-  yaw_pos_.SetMeasure(INS.YawTotalAngle);
+  yaw_pos_.SetRef((ang_yaw_ / 8192.0f) * 2 * PI);
+  yaw_pos_.SetMeasure((target_yaw_ / 8192.0f) * 2 * PI);
   yaw_speed_.SetRef(yaw_pos_.Calculate());
   yaw_speed_.SetMeasure(INS.Gyro[Z]);
   yaw_speed_.Calculate();
@@ -210,11 +201,18 @@ void Chassis::SynthesizeMotion() {
   } else {
     r_wheel_T_ = lqr_right_.GetWheelTor() + yaw_speed_.GetOutput();
   }
+
+  anti_crash_.SetRef(0.0f);
+  anti_crash_.SetMeasure(left_leg_.GetPhi0() - right_leg_.GetPhi0());
+  anti_crash_.Calculate();
+  left_leg_T_ = lqr_left_.GetLegTor() + anti_crash_.GetOutput();
+  right_leg_T_ = lqr_right_.GetLegTor() - anti_crash_.GetOutput();
 }
 
 void Chassis::Controller() {
   SetState();
   LegCalc();
+  SpeedCalc();
   LQRCalc();
   SynthesizeMotion();
   if (jump_state_ == true)
@@ -244,25 +242,93 @@ void Chassis::StopMotor() {
   r_wheel_.SetTor(0.0f);
 }
 
-void Chassis::SetState() {
-  static uint8_t ready_jump;
+void Chassis::SetLegLen() {
+  if (fabsf(INS.Pitch) < 10.0f) {
+    if (board_comm.GetLongLenFlag() && !board_comm.GetShortLenFlag()) {
+      left_leg_len_.SetRef(0.3f);
+      right_leg_len_.SetRef(0.3f);
+    } else if (!board_comm.GetLongLenFlag() && board_comm.GetShortLenFlag()) {
+      left_leg_len_.SetRef(0.08f);
+      right_leg_len_.SetRef(0.08f);
+    } else {
+      left_leg_len_.SetRef(0.18f);
+      right_leg_len_.SetRef(0.18f);
+    }
+  } else {
+    left_leg_len_.SetRef(0.08f);
+    right_leg_len_.SetRef(0.08f);
+  }
+}
 
+void Chassis::SetFollow() {
+  if (fabsf(board_comm.GetYSpeed()) > 0.0f && side_flag_ == 1) {
+    side_flag_ = 0;
+  }
+
+  if (fabsf(board_comm.GetXSpeed()) > 0.0f && side_flag_ == 0) {
+    side_flag_ = 1;
+  }
+
+  if (side_flag_ == 0) {
+    if (arm_cos_f32(yaw_motor_.GetAngle() * DEGREE_2_RAD) >= 0.0f){
+      SetTargetYaw(6812);
+    } else {
+      SetTargetYaw(2716);
+    }
+  } else {
+    if (arm_sin_f32(yaw_motor_.GetAngle() * DEGREE_2_RAD) >= 0.0f) {
+      SetTargetYaw(668);
+    } else {
+      SetTargetYaw(4764);
+    }
+  }
+
+  ang_yaw_ = yaw_motor_.GetEncode();
+  if (ang_yaw_ - target_yaw_ > 4096) {
+    ang_yaw_ -= 8192;
+  } else if (ang_yaw_ - target_yaw_ < -4096) {
+    ang_yaw_ += 8192;
+  }
+}
+
+void Chassis::SetSpd() {
+  if (board_comm.GetCapFlag()) {
+    set_spd_ = 2.0f;
+  } else {
+    set_spd_ = 1.5f;
+  }
+}
+
+void Chassis::SetState() {
   controller_dt_ = DWT_GetDeltaT(&dwt_cnt_controller_);
 
-  target_speed_ = (remote.GetCh3() / 660.0f) * 2.f;
+  SetLegLen();
+  SetFollow();
+  SetSpd();
+  float y_spd_ = +arm_cos_f32(yaw_motor_.GetAngle() * DEGREE_2_RAD) *
+                     board_comm.GetYSpeed() +
+                 arm_sin_f32(yaw_motor_.GetAngle() * DEGREE_2_RAD) *
+                     board_comm.GetXSpeed();
 
-  if (remote.GetS2() == 2 || remote.GetS2() == 3) {
+  if (fabsf((y_spd_ / 2000.0f) * set_spd_ - target_speed_) / controller_dt_ <
+      5.0f) {
+    target_speed_ = (y_spd_ / 2000.0f) * set_spd_;
+  } else {
+    target_speed_ += Math::Sign((y_spd_ / 2000.0f) * set_spd_ - target_speed_) *
+                     5.0f * controller_dt_;
+  }
+  if (board_comm.GetReadyFlag() == 0) {
     lqr_left_.SetNowDist(0.0f);
     lqr_right_.SetNowDist(0.0f);
   }
 
-  if (remote.GetS1() == 3) {
-    ready_jump = 1;
-  }
-  if (remote.GetS1() == 2 && ready_jump == 1) {
-    jump_state_ = true;
-    ready_jump = 0;
-  }
+  // if (remote.GetS1() == 3) {
+  //   ready_jump = 1;
+  // }
+  // if (remote.GetS1() == 2 && ready_jump == 1) {
+  //   jump_state_ = true;
+  //   ready_jump = 0;
+  // }
 }
 
 // 相关功能函数
@@ -324,8 +390,7 @@ void Chassis::SpeedCalc() {
   // 使用kf同时估计加速度和速度,滤波更新
   kf.MeasuredVector[0] = vel_m;
   kf.MeasuredVector[1] = INS.MotionAccel_n[Y];
-  observer_dt_ = DWT_GetDeltaT(&dwt_cnt_observer);
-  kf.F_data[1] = observer_dt_;  // 更新F矩阵
+  kf.F_data[1] = controller_dt_;  // 更新F矩阵
   Kalman_Filter_Update(&kf);
   vel_ = kf.xhat_data[0];
   acc_ = kf.xhat_data[1];
