@@ -40,8 +40,7 @@ void DjiMotor::Update()
     }
 
     last_encode_ = encode_;
-    int32_t encode_now = encode_ + round_cnt_ * 8192 - encode_offest_;
-    ang_real_ = (encode_now / 8192.0f) * 360.0f;
+    ang_real_ = ((encode_ + round_cnt_ * 8192 - encode_offest_) / 8192.0f) * 360.0f;
 }
 
 void DjiMotorCallBack()
