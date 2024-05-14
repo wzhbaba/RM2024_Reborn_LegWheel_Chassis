@@ -32,6 +32,7 @@ typedef struct {
     uint32_t rx_id;
     uint8_t rx_len;
     uint8_t rx_buff[8];
+    uint8_t rx_rtr;
     void (*pCanCallBack)();
 } CanInstance;
 #pragma pack()

@@ -55,6 +55,7 @@ osThreadId wheelMotorTaskHandle;
 osThreadId chassisTaskHandle;
 osThreadId legMotorTaskHandle;
 osThreadId ctrlcommTaskHandle;
+osThreadId capTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -67,6 +68,7 @@ void StartWheelMotorTask(void const * argument);
 void StartChassisTask(void const * argument);
 void StartLegMotorTask(void const * argument);
 void StartCtrlCommTask(void const * argument);
+void StartCapTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -137,6 +139,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of ctrlcommTask */
   osThreadDef(ctrlcommTask, StartCtrlCommTask, osPriorityNormal, 0, 128);
   ctrlcommTaskHandle = osThreadCreate(osThread(ctrlcommTask), NULL);
+
+  /* definition and creation of capTask */
+  osThreadDef(capTask, StartCapTask, osPriorityRealtime, 0, 128);
+  capTaskHandle = osThreadCreate(osThread(capTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -275,6 +281,25 @@ void StartCtrlCommTask(void const * argument)
     osDelay(5);
   }
   /* USER CODE END StartCtrlCommTask */
+}
+
+/* USER CODE BEGIN Header_StartCapTask */
+/**
+* @brief Function implementing the capTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartCapTask */
+void StartCapTask(void const * argument)
+{
+  /* USER CODE BEGIN StartCapTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    CapTask();
+    osDelay(10);
+  }
+  /* USER CODE END StartCapTask */
 }
 
 /* Private application code --------------------------------------------------*/

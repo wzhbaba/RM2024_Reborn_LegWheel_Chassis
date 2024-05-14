@@ -112,6 +112,7 @@ static void CanRxCallBack(CAN_HandleTypeDef *_phcan, uint32_t _Fifo)
         for (uint8_t i = 0; i < 16; i++) {
             if (rx_header.StdId == pcan_instance[i]->rx_id && _phcan == pcan_instance[i]->hcan) {
                 if (pcan_instance[i]->pCanCallBack != NULL) {
+                    pcan_instance[i]->rx_rtr = rx_header.RTR;
                     pcan_instance[i]->rx_len = rx_header.DLC;
                     memcpy(pcan_instance[i]->rx_buff, rx_buff, rx_header.DLC);
                     pcan_instance[i]->pCanCallBack();
