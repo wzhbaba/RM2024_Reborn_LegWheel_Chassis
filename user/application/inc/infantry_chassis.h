@@ -31,6 +31,7 @@ void UnitreeMotorTask();
 void WheelMotorTask();
 void ChassisCalcTask();
 void CtrlCommTask();
+void CapTask();
 
 #ifdef __cplusplus
 }
