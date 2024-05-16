@@ -56,6 +56,7 @@ osThreadId chassisTaskHandle;
 osThreadId legMotorTaskHandle;
 osThreadId ctrlcommTaskHandle;
 osThreadId capTaskHandle;
+osThreadId refereecommTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -69,6 +70,7 @@ void StartChassisTask(void const * argument);
 void StartLegMotorTask(void const * argument);
 void StartCtrlCommTask(void const * argument);
 void StartCapTask(void const * argument);
+void StartRefereeTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -143,6 +145,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of capTask */
   osThreadDef(capTask, StartCapTask, osPriorityRealtime, 0, 128);
   capTaskHandle = osThreadCreate(osThread(capTask), NULL);
+
+  /* definition and creation of refereecommTask */
+  osThreadDef(refereecommTask, StartRefereeTask, osPriorityNormal, 0, 256);
+  refereecommTaskHandle = osThreadCreate(osThread(refereecommTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -293,13 +299,36 @@ void StartCtrlCommTask(void const * argument)
 void StartCapTask(void const * argument)
 {
   /* USER CODE BEGIN StartCapTask */
+  static float cap_start;
+  static float cap_dt;
+
   /* Infinite loop */
   for(;;)
   {
+    cap_start = DWT_GetTimeline_ms();
     CapTask();
+    cap_dt = DWT_GetTimeline_ms() - cap_start;
     osDelay(10);
   }
   /* USER CODE END StartCapTask */
+}
+
+/* USER CODE BEGIN Header_StartRefereeTask */
+/**
+* @brief Function implementing the refereecommTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartRefereeTask */
+void StartRefereeTask(void const * argument)
+{
+  /* USER CODE BEGIN StartRefereeTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    UITask();
+  }
+  /* USER CODE END StartRefereeTask */
 }
 
 /* Private application code --------------------------------------------------*/
