@@ -16,8 +16,6 @@
 #ifndef __BOARD_COMM_H_
 #define __BOARD_COMM_H_
 
-#ifdef __cplusplus
-
 /* Includes ------------------------------------------------------------------*/
 #include "bsp_can.h"
 /* Exported macro ------------------------------------------------------------*/
@@ -33,8 +31,13 @@ typedef struct {
   uint8_t aim_flag : 1;
   uint8_t rotate_flag : 1;
   uint8_t cap_flag : 1;
-  uint8_t stop_flag : 1;
-  uint8_t side_flag : 1;
+  uint8_t ready_flag : 1;
+  uint8_t jump_flag : 1;
+  uint8_t energy : 1;  //
+  uint8_t long_len_flag : 1;
+  uint8_t short_len_flag : 1;
+  uint8_t refresh_flag : 1;
+  uint8_t reserved : 5;
 } rece_pack;
 
 typedef struct {
@@ -56,7 +59,12 @@ class BoardComm {
   uint8_t GetAimFlag() { return rece_.aim_flag; };
   uint8_t GetRotateFlag() { return rece_.rotate_flag; };
   uint8_t GetCapFlag() { return rece_.cap_flag; };
-  uint8_t GetReadyFlag() { return rece_.stop_flag; };
+  uint8_t GetReadyFlag() { return rece_.ready_flag; };
+  uint8_t GetJumpFlag() { return rece_.jump_flag; }
+  uint8_t GetLongLenFlag() { return rece_.long_len_flag; }
+  uint8_t GetShortLenFlag() { return rece_.short_len_flag; }
+  uint8_t GetRefreshIDFlag() { return rece_.refresh_flag; }
+
   void SetCoolingHeat(uint16_t _data) { send_.cooling_heat = _data; };
   void SetCoolingLimit(uint16_t _data) { send_.cooling_limit = _data; };
   void SetShooterOutput(uint16_t _data) { send_.shooter_output = _data; };
@@ -74,7 +82,5 @@ class BoardComm {
 /* Exported variables --------------------------------------------------------*/
 extern BoardComm board_comm;
 /* Exported function prototypes ----------------------------------------------*/
-
-#endif
 
 #endif /* __BOARD_COMM_H_ */
