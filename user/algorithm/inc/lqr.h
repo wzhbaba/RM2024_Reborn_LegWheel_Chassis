@@ -36,13 +36,13 @@ class Lqr {
     F_N_ = _F_N;
   }
   void SetSpeed(const float _speed) { target_speed_ = _speed; };
-  void SetNowDist(const float _dist) { dist_ = _dist; }
+  void SetNowDist(const float _dist) { target_dist_ = _dist; }
   float GetWheelTor() { return T_[0]; };
   float GetLegTor() { return T_[1]; };
 
  private:
   float dist_, speed_, phi_, w_phi_, theta_, w_theta_, leg_len_;
-  float target_speed_, F_N_, T_[2], T_K_[2][6];
+  float target_speed_, target_dist_, F_N_, T_[2], T_K_[2][6];
 };
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
