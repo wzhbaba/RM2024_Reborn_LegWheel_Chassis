@@ -79,9 +79,9 @@ class PM01_t
     {
         iout_set_ = _iout * 100;
     }
-    float GetVolt()
+    int GetVolt()
     {
-        return data.v_out / 100.0f;
+        return data.v_out;
     }
     uint8_t GetCapState()
     {
