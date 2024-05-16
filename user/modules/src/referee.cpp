@@ -98,6 +98,12 @@ void Referee::Update(uint8_t *_p_data)
                         // JUDGE_ShootNumCount();//发弹量统计
                         break;
 
+                    case ID_projectile_allowance :
+                        memcpy(&projectile_allowance, (_p_data + DATA), LEN_projectile_allowance);
+
+                    case ID_rfid_status:  // 0x0209
+                        memcpy(&rfid_status_, (_p_data + DATA), LEN_rfid_status);
+                        break;
                     case ID_command_data:  // 0x0304
                         memcpy(&comma_data, (_p_data + DATA), LEN_command_data);
                         break;

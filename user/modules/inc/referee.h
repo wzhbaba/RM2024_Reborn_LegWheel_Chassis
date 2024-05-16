@@ -370,6 +370,17 @@ typedef struct
     uint16_t FrameTail;                                     // 帧尾
 } ext_CommunatianData_t;
 
+typedef struct 
+{ 
+  uint16_t projectile_allowance_17mm; 
+  uint16_t projectile_allowance_42mm;  
+  uint16_t remaining_gold_coin; 
+}ext_projectile_allowance_t;
+typedef struct 
+{ 
+  uint32_t rfid_status; 
+}ext_rfid_status_t;
+
 typedef struct
 {
     int16_t mouse_x;
@@ -402,6 +413,8 @@ class Referee
     aerial_robot_energy_t aerial_robot_energy_;                // 0x0205
     ext_robot_hurt_t robot_hurt_;                              // 0x0206
     ext_shoot_data_t shoot_data_;                              // 0x0207
+    ext_projectile_allowance_t projectile_allowance;         // 0x0208
+    ext_rfid_status_t rfid_status_;                            // 0x0209
     ext_SendClientData_t show_data_;                           // 客户端信息
     ext_CommunatianData_t commu_data;                          // 队友通信信息
     ext_robot_command_t comma_data;                            // 图传链路
