@@ -68,6 +68,7 @@ class Chassis {
   Unitree_Motor lf_joint_, lb_joint_, rf_joint_, rb_joint_;
   Mf9025 l_wheel_, r_wheel_;
   DjiMotor yaw_motor_;
+  Vmc left_leg_, right_leg_;
   void LegCalc();
   void SetTargetYaw(float _pos) { target_yaw_ = _pos; }
   void MotorInit();
@@ -88,7 +89,6 @@ class Chassis {
   void SetSpd();
  private:
   KalmanFilter_t kf;
-  Vmc left_leg_, right_leg_;
   Lqr lqr_left_, lqr_right_;
   Pid left_leg_len_, right_leg_len_, anti_crash_, roll_ctrl_, yaw_pos_,
       yaw_speed_;
