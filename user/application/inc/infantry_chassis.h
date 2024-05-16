@@ -32,6 +32,7 @@ void WheelMotorTask();
 void ChassisCalcTask();
 void CtrlCommTask();
 void CapTask();
+void UITask();
 
 #ifdef __cplusplus
 }
