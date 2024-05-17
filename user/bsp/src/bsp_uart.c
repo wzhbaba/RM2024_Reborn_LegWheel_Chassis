@@ -62,7 +62,6 @@ UartInstance *pUartRegister(UartInitConfig *_pconfig)
 void UartInit(UartInstance *_pinstance)
 {
     HAL_UARTEx_ReceiveToIdle_DMA(_pinstance->huart, _pinstance->rx_buffer, _pinstance->rx_buffer_size);
-    __HAL_DMA_DISABLE_IT(_pinstance->huart->hdmarx, DMA_IT_HT);
 }
 
 /**
@@ -109,7 +108,16 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
                 memset(uart_instance[i]->rx_buffer, 0, Size);  // 接收结束后清空buffer,对于变长数据是必要的
             }
             HAL_UARTEx_ReceiveToIdle_DMA(uart_instance[i]->huart, uart_instance[i]->rx_buffer, uart_instance[i]->rx_buffer_size);
-            __HAL_DMA_DISABLE_IT(uart_instance[i]->huart->hdmarx, DMA_IT_HT);
+            return;
+        }
+    }
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+    for (uint8_t i = 0; i < idx; ++i) {
+        if (huart == uart_instance[i]->huart) {
+            HAL_UARTEx_ReceiveToIdle_DMA(uart_instance[i]->huart, uart_instance[i]->rx_buffer, uart_instance[i]->rx_buffer_size);
+            memset(uart_instance[i]->rx_buffer, 0, uart_instance[i]->rx_buffer_size);  // 接收结束后清空buffer,对于变长数据是必要的
             return;
         }
     }

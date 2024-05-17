@@ -95,15 +95,16 @@ void Referee::Update(uint8_t *_p_data)
 
                     case ID_shoot_data:  // 0x0207
                         memcpy(&shoot_data_, (_p_data + DATA), LEN_shoot_data);
-                        // JUDGE_ShootNumCount();//发弹量统计
                         break;
 
                     case ID_projectile_allowance :
                         memcpy(&projectile_allowance, (_p_data + DATA), LEN_projectile_allowance);
+                        break;
 
                     case ID_rfid_status:  // 0x0209
                         memcpy(&rfid_status_, (_p_data + DATA), LEN_rfid_status);
                         break;
+                        
                     case ID_command_data:  // 0x0304
                         memcpy(&comma_data, (_p_data + DATA), LEN_command_data);
                         break;
@@ -120,6 +121,7 @@ void Referee::Update(uint8_t *_p_data)
     board_comm.SetCoolingLimit(game_robot_state_.shooter_barrel_heat_limit);
     board_comm.SetShooterOutput(game_robot_state_.power_management_shooter_output);
     board_comm.SetRobotID(game_robot_state_.robot_id);
+    board_comm.SetBulletSpeed((int16_t)shoot_data_.bullet_speed * 10);
 }
 
 static void RefereeCallback()
