@@ -54,7 +54,7 @@ void ChassisCalcTask() {
   }
   if (cnt_flag) {
     cnt++;
-    if (cnt > 1600) {
+    if (cnt > 3500) {
       cnt_flag = 0;
       referee_ready = 1;
       cnt = 0;
@@ -166,11 +166,23 @@ void UITask() {
     UI.Draw_Line(&UI.UI_Graph7[0].Graphic[5], (char*)"125", UI_Graph_Change, 0,
                  UI_Color_Cyan, 30, 1300, 40, 1300, right_len);
     if (board_comm.GetAimFlag()) {
-    UI.Draw_Rectangle(&UI.UI_Graph7[0].Graphic[6], (char*)"126", UI_Graph_Change,
-                      1, UI_Color_Green, 3, 557, 289, 1355, 769);
+      if (board_comm.GetEnergy() == 1) {
+        UI.Draw_Rectangle(&UI.UI_Graph7[0].Graphic[6], (char*)"126",
+                          UI_Graph_Change, 1, UI_Color_Green, 3, 557, 289, 1355,
+                          769);
+      } else if (board_comm.GetEnergy() == 3) {
+        UI.Draw_Rectangle(&UI.UI_Graph7[0].Graphic[6], (char*)"126",
+                          UI_Graph_Change, 1, UI_Color_Yellow, 3, 557, 289, 1355,
+                          769);
+      } else if (board_comm.GetEnergy() == 4) {
+        UI.Draw_Rectangle(&UI.UI_Graph7[0].Graphic[6], (char*)"126",
+                          UI_Graph_Change, 1, UI_Color_Pink, 3, 557, 289, 1355,
+                          769);
+      }
     } else {
-      UI.Draw_Rectangle(&UI.UI_Graph7[0].Graphic[6], (char*)"126", UI_Graph_Change,
-                        1, UI_Color_White, 3, 557, 289, 1355, 769);
+      UI.Draw_Rectangle(&UI.UI_Graph7[0].Graphic[6], (char*)"126",
+                        UI_Graph_Change, 1, UI_Color_White, 3, 557, 289, 1355,
+                        769);
     }
     UI.PushUp_Graphs(7, &UI.UI_Graph7[0], referee.game_robot_state_.robot_id);
     osDelay(40);
@@ -218,11 +230,14 @@ void UITask() {
     int16_t cos_theta =
         arm_cos_f32(chassis.yaw_motor_.GetAngle() * DEGREE_2_RAD) * 70;
     int16_t sin_theta_90 =
-        arm_sin_f32((chassis.yaw_motor_.GetAngle() + 90.0f) * DEGREE_2_RAD) * 70;
+        arm_sin_f32((chassis.yaw_motor_.GetAngle() + 90.0f) * DEGREE_2_RAD) *
+        70;
     int16_t cos_theta_90 =
-        arm_cos_f32((chassis.yaw_motor_.GetAngle() + 90.0f) * DEGREE_2_RAD) * 70;
+        arm_cos_f32((chassis.yaw_motor_.GetAngle() + 90.0f) * DEGREE_2_RAD) *
+        70;
     UI.Draw_Line(&UI.UI_Graph2[0].Graphic[0], (char*)"130", UI_Graph_Change, 3,
-                 UI_Color_Purplish_red, 4, 737 + sin_theta_90, 124 + cos_theta_90, 737 - sin_theta_90, 124 - cos_theta_90);
+                 UI_Color_Purplish_red, 4, 737 + sin_theta_90,
+                 124 + cos_theta_90, 737 - sin_theta_90, 124 - cos_theta_90);
     UI.Draw_Line(&UI.UI_Graph2[0].Graphic[1], (char*)"131", UI_Graph_Change, 3,
                  UI_Color_Pink, 4, 737, 124, 737 + sin_theta, 124 + cos_theta);
     UI.PushUp_Graphs(2, &UI.UI_Graph2[0], referee.game_robot_state_.robot_id);
