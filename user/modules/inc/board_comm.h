@@ -33,18 +33,21 @@ typedef struct {
   uint8_t cap_flag : 1;
   uint8_t ready_flag : 1;
   uint8_t jump_flag : 1;
-  uint8_t energy : 1;  //
+  uint8_t energy : 3;  //
   uint8_t long_len_flag : 1;
   uint8_t short_len_flag : 1;
   uint8_t refresh_flag : 1;
-  uint8_t reserved : 5;
+  uint8_t left_rotate_flag : 1;
+  uint8_t right_rotate_flag : 1;
+  uint8_t reserved : 1;
 } rece_pack;
 
 typedef struct {
   uint16_t cooling_heat;
   uint16_t cooling_limit;
-  uint16_t shooter_output;
-  uint16_t robot_id;
+  int16_t bullet_speed;
+  uint8_t robot_id;
+  uint8_t shooter_output;
 } send_pack;
 
 #pragma pack()
@@ -64,11 +67,15 @@ class BoardComm {
   uint8_t GetLongLenFlag() { return rece_.long_len_flag; }
   uint8_t GetShortLenFlag() { return rece_.short_len_flag; }
   uint8_t GetRefreshIDFlag() { return rece_.refresh_flag; }
+  uint8_t GetEnergy() { return rece_.energy; }
+  uint8_t GetLeftRotate() { return rece_.left_rotate_flag; }
+  uint8_t GetRightRotate() { return rece_.right_rotate_flag; }
 
   void SetCoolingHeat(uint16_t _data) { send_.cooling_heat = _data; };
   void SetCoolingLimit(uint16_t _data) { send_.cooling_limit = _data; };
   void SetShooterOutput(uint16_t _data) { send_.shooter_output = _data; };
   void SetRobotID(uint16_t _data) { send_.robot_id = _data; }
+  void SetBulletSpeed(int16_t _data) { send_.bullet_speed = _data; }
   void Send();
   void Receive();
   void Init(CAN_HandleTypeDef* _phcan, uint16_t _id);
