@@ -47,6 +47,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 build
+.cache
 ./idea
 .vscode/.cortex-debug.peripherals.state.json
 .vscode/.cortex-debug.registers.state.json
