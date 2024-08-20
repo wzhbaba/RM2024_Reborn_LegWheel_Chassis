@@ -26,7 +26,7 @@
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 const float k_gravity_comp = 7.4f * 9.8f;
-const float k_roll_extra_comp_p = 500.0f;
+const float k_roll_extra_comp_p = 1000.0f;
 const float k_wheel_radius = 0.076f;
 
 const float k_phi1_bias = 0.724f + 3.141f;
@@ -37,8 +37,8 @@ const float k_lb_joint_bias = 2.941f;
 const float k_rf_joint_bias = 3.3689f;
 const float k_rb_joint_bias = 2.492f;
 
-const float k_jump_force = 200.0f;
-const float k_jump_time = 0.15f;
+const float k_jump_force = 220.0f;
+const float k_jump_time = 0.2f;
 const float k_retract_force = -120.0f;
 const float k_retract_time = 0.1f;
 
@@ -187,7 +187,13 @@ void Chassis::LegLenCalc() {
 void Chassis::SynthesizeMotion() {
   yaw_pos_.SetRef((ang_yaw_ / 8192.0f) * 2 * PI);
   yaw_pos_.SetMeasure((target_yaw_ / 8192.0f) * 2 * PI);
-  yaw_speed_.SetRef(yaw_pos_.Calculate());
+  if (board_comm.GetLeftRotate() && !board_comm.GetRightRotate()) {
+    yaw_speed_.SetRef(5.0f);
+  } else if (board_comm.GetRightRotate() && !board_comm.GetLeftRotate()) {
+    yaw_speed_.SetRef(-5.0f);
+  } else {
+    yaw_speed_.SetRef(yaw_pos_.Calculate());
+  }
   yaw_speed_.SetMeasure(INS.Gyro[Z]);
   yaw_speed_.Calculate();
 
@@ -243,7 +249,7 @@ void Chassis::StopMotor() {
 }
 
 void Chassis::SetLegLen() {
-  if (fabsf(INS.Pitch) < 10.0f) {
+  if (fabsf(INS.Pitch) < 8.0f) {
     if (board_comm.GetLongLenFlag() && !board_comm.GetShortLenFlag()) {
       left_leg_len_.SetRef(0.3f);
       right_leg_len_.SetRef(0.3f);
@@ -293,7 +299,7 @@ void Chassis::SetFollow() {
 
 void Chassis::SetSpd() {
   if (board_comm.GetCapFlag()) {
-    set_spd_ = 2.0f;
+    set_spd_ = 2.5f;
   } else {
     set_spd_ = 1.5f;
   }
@@ -315,20 +321,16 @@ void Chassis::SetState() {
     target_speed_ = (y_spd_ / 2000.0f) * set_spd_;
   } else {
     target_speed_ += Math::Sign((y_spd_ / 2000.0f) * set_spd_ - target_speed_) *
-                     5.0f * controller_dt_;
+                     4.f * controller_dt_;
   }
   if (board_comm.GetReadyFlag() == 0) {
     lqr_left_.SetNowDist(0.0f);
     lqr_right_.SetNowDist(0.0f);
   }
 
-  // if (remote.GetS1() == 3) {
-  //   ready_jump = 1;
-  // }
-  // if (remote.GetS1() == 2 && ready_jump == 1) {
-  //   jump_state_ = true;
-  //   ready_jump = 0;
-  // }
+  if (board_comm.GetJumpFlag()) {
+    jump_state_ = true;
+  }
 }
 
 // 相关功能函数
@@ -361,6 +363,8 @@ void Chassis::Jump() {
         (jump_now_time_ - jump_start_time_) > k_jump_time) {
       left_leg_F_ = k_retract_force;
       right_leg_F_ = k_retract_force;
+      l_wheel_T_ = 0.0f;
+      r_wheel_T_ = 0.0f;
     }
     if ((jump_now_time_ - jump_start_time_ - k_jump_time) > k_retract_time) {
       jump_state_ = false;
