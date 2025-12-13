@@ -140,8 +140,8 @@ void Chassis::PidInit() {
   roll_ctrl_.Init(100.0f, 0.0f, 0.0f, 30.0f, 0.001f);
 
   //yaw轴双环pid
-  yaw_pos_.Init(2.0f, 0.0f, 0.0f, 2.0f, 0.001f);
-  yaw_speed_.Init(8.0f, 0.0f, 0.0f, 10.0f, 0.0f);
+  yaw_pos_.Init(4.0f, 0.0f, 1.0f, 3.0f, 0.001f);
+  yaw_speed_.Init(4.0f, 4.0f, 0.0f, 10.0f, 0.0f);
 
   //pid增强
   left_leg_len_.Inprovement(PID_CHANGING_INTEGRATION_RATE |
@@ -203,12 +203,12 @@ void Chassis::LQRCalc() {
   }
   //向lqr类传入数据
   lqr_left_.SetData(dist_, vel_, -(INS.Pitch) * DEGREE_2_RAD, -INS.Gyro[X],
-                    -((left_leg_.GetTheta() - 0.04) + (right_leg_.GetTheta() - 0.04)) / 2,
-                    -(left_leg_.GetDotTheta() + right_leg_.GetDotTheta()) / 2,
+                    -(left_leg_.GetTheta() - 0.04),
+                    -(left_leg_.GetDotTheta()),
                     left_leg_.GetLegLen(), left_leg_.GetForceNormal());
   lqr_right_.SetData(dist_, vel_, -(INS.Pitch) * DEGREE_2_RAD, -INS.Gyro[X],
-                     -((left_leg_.GetTheta() - 0.04) + (right_leg_.GetTheta() - 0.04)) / 2,
-                     -(left_leg_.GetDotTheta() + right_leg_.GetDotTheta()) / 2,
+                     -(right_leg_.GetTheta() - 0.04),
+                     -(right_leg_.GetDotTheta()),
                      right_leg_.GetLegLen(), right_leg_.GetForceNormal());
   //lqr K增益计算控制量
   lqr_left_.Calc();
