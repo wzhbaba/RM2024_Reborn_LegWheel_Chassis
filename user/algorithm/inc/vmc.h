@@ -62,6 +62,7 @@ public:
   float GetPhi2Speed() { return w_phi2_; };
   float GetForceNormal() { return F_N_; };
 
+
 private:
   float phi_, phi0_, phi1_, phi4_, w_phi1_, w_phi4_, l0_;
   float theta_, height_, w_theta_, v_height_, dotw_theta_, dotv_height_,

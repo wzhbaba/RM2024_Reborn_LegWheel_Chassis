@@ -208,8 +208,7 @@ void Chassis::LegCalc() {
 
 void Chassis::LQRCalc() {
   //向lqr类中传入速度
-  lqr_left_.SetSpeed(target_speed_);
-  lqr_right_.SetSpeed(target_speed_);
+  lqr_.SetSpeed(target_speed_);
 
   //仅当速度小于0.1m/s时计算位移,否则位移清零
   if (fabsf(vel_) < 0.1f) {
@@ -219,17 +218,15 @@ void Chassis::LQRCalc() {
     dist_ = 0.0f;
   }
   //向lqr类传入数据
-  lqr_left_.SetData(dist_, vel_, -(INS.Pitch) * DEGREE_2_RAD, -INS.Gyro[X],
-                    -(left_leg_.GetTheta() - 0.04),
-                    -(left_leg_.GetDotTheta()),
-                    left_leg_.GetLegLen(), left_leg_.GetForceNormal());
-  lqr_right_.SetData(dist_, vel_, -(INS.Pitch) * DEGREE_2_RAD, -INS.Gyro[X],
-                     -(right_leg_.GetTheta() - 0.04),
-                     -(right_leg_.GetDotTheta()),
-                     right_leg_.GetLegLen(), right_leg_.GetForceNormal());
+  lqr_.SetData(dist_, vel_, -(INS.Pitch) * DEGREE_2_RAD, -INS.Gyro[X],
+               INS.Yaw, gyro_ * DEGREE_2_RAD,
+               -(left_leg_.GetTheta() - 0.04), -(left_leg_.GetDotTheta()),
+               -(right_leg_.GetTheta() - 0.04), -(right_leg_.GetDotTheta()),
+               INS.Roll, INS.Gyro[Y],
+               left_leg_.GetLegLen(), right_leg_.GetLegLen(),
+               left_leg_.GetForceNormal(), right_leg_.GetForceNormal());
   //lqr K增益计算控制量
-  lqr_left_.Calc();
-  lqr_right_.Calc();
+  lqr_.Calc();
 }
 /**
  * 计算关节力矩
@@ -268,14 +265,14 @@ void Chassis::SynthesizeMotion() {
 
   // 云台板子收到小陀螺指令，根据指令进行5rad/s左旋右旋
   if (board_comm.GetLeftRotate() && !board_comm.GetRightRotate()) {
-    yaw_speed_.SetRef(5.0f);
+    lqr_.SetWYaw(5.0f);
   }
   else if (board_comm.GetRightRotate() && !board_comm.GetLeftRotate()) {
-    yaw_speed_.SetRef(-5.0f);
+    lqr_.SetWYaw(-5.0f);
   }
   //否则yaw轴速度环设定目标值为位置环PID结果
   else {
-    yaw_speed_.SetRef(yaw_pos_.Calculate());
+    lqr_.SetWYaw(yaw_pos_.Calculate());
   }
 
   //速度环测量值为yaw方向角速度
@@ -288,19 +285,11 @@ void Chassis::SynthesizeMotion() {
   // /*debug*/
 
   //仅当腿支持力大于等于20(未离地)，进行旋转控制
-  if (left_leg_.GetForceNormal() < 20.0f) {
-    l_wheel_T_ = lqr_left_.GetWheelTor();
-  }
-  else {
-    l_wheel_T_ = lqr_left_.GetWheelTor() - yaw_speed_.GetOutput();
-  }
 
-  if (right_leg_.GetForceNormal() < 20.0f) {
-    r_wheel_T_ = lqr_right_.GetWheelTor();
-  }
-  else {
-    r_wheel_T_ = lqr_right_.GetWheelTor() + yaw_speed_.GetOutput();
-  }
+  l_wheel_T_ = lqr_.GetLeftWheelTor();
+  r_wheel_T_ = lqr_.GetRightWheelTor();
+
+
 
   //防劈叉PID
   anti_crash_.SetRef(0.0f);
@@ -308,8 +297,8 @@ void Chassis::SynthesizeMotion() {
   anti_crash_.Calculate();
 
   //防劈叉处理
-  left_leg_T_ = -lqr_left_.GetLegTor() + anti_crash_.GetOutput();
-  right_leg_T_ = -lqr_right_.GetLegTor() - anti_crash_.GetOutput();
+  left_leg_T_ = -lqr_.GetLeftLegTor(); +anti_crash_.GetOutput();
+  right_leg_T_ = -lqr_.GetRightLegTor() - anti_crash_.GetOutput();
 }
 
 void Chassis::Controller() {
@@ -474,8 +463,7 @@ void Chassis::SetState() {
   }
   if (board_comm.GetReadyFlag() == 0) {
     //如果云台未发送准备信号,位移设置为0
-    lqr_left_.SetNowDist(0.0f);
-    lqr_right_.SetNowDist(0.0f);
+    lqr_.SetNowDist(0.0f);
   }
 
   if (board_comm.GetJumpFlag()) {

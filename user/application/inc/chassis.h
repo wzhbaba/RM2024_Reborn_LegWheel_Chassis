@@ -97,7 +97,7 @@ public:
   void SetSpd();
 private:
   KalmanFilter_t kf_v, kf_w;
-  Lqr lqr_left_, lqr_right_;
+  Lqr lqr_;
   Pid left_leg_len_, right_leg_len_, anti_crash_, roll_ctrl_, yaw_pos_,
     yaw_speed_;
   float left_leg_F_, right_leg_F_, roll_comp;
@@ -107,7 +107,7 @@ private:
   float target_yaw_;    //目标yaw，做底盘跟随和小陀螺用
   float target_dist_;
   float vel_;           //滤波后速度
-  float gyro_;
+  float gyro_;          //滤波后yaw角速度deg/s
   float dist_;          //位移
   float acc_;           //滤波后加速度
   float vel_m, left_v_body_, right_v_body_, left_w_wheel_, right_w_wheel_;
