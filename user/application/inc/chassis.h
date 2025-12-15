@@ -38,6 +38,12 @@
 #define ACC_PROCESS_NOISE 400  // 加速度过程噪声   
 #define ACC_MEASURE_NOISE 16  // 加速度测量噪声   200
 
+
+#define GYRO_PROCESS_NOISE          1
+#define Eular_PROCESS_NOISE         16
+#define GYRO_MEASURE_NOISE          2000
+#define Eular_MEASURE_NOISE         400
+
 /* Exported types ------------------------------------------------------------*/
 
 typedef enum {
@@ -78,9 +84,11 @@ public:
   void LQRCalc();
   void LegLenCalc();
   void SpeedCalc();
+  void GyroCalc();
   void SynthesizeMotion();
   void Jump();
   void SpeedEstInit();
+  void GyroEstInit();
   void SetMotorTor();
   void StopMotor();
   void SetLegLen();
@@ -88,7 +96,7 @@ public:
   void SetState();
   void SetSpd();
 private:
-  KalmanFilter_t kf;
+  KalmanFilter_t kf_v, kf_w;
   Lqr lqr_left_, lqr_right_;
   Pid left_leg_len_, right_leg_len_, anti_crash_, roll_ctrl_, yaw_pos_,
     yaw_speed_;
@@ -99,6 +107,7 @@ private:
   float target_yaw_;    //目标yaw，做底盘跟随和小陀螺用
   float target_dist_;
   float vel_;           //滤波后速度
+  float gyro_;
   float dist_;          //位移
   float acc_;           //滤波后加速度
   float vel_m, left_v_body_, right_v_body_, left_w_wheel_, right_w_wheel_;

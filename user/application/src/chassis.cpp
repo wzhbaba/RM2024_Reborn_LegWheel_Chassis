@@ -66,7 +66,7 @@ Chassis chassis;
 
 void Chassis::SpeedEstInit() {
   // 速度卡尔曼观测初始化
-  Kalman_Filter_Init(&kf, 2, 0, 2);
+  Kalman_Filter_Init(&kf_v, 2, 0, 2);
   float F[4] = { 1, 0.001, 0, 1 };
   float Q[4] = { VEL_PROCESS_NOISE, 0, 0, ACC_MEASURE_NOISE };
   float R[4] = { VEL_MEASURE_NOISE, 0, 0, ACC_MEASURE_NOISE };
@@ -74,11 +74,28 @@ void Chassis::SpeedEstInit() {
   float H[4] = { 1, 0, 0, 1 };              //观测矩阵H
 
   //将矩阵赋值到kf结构体中
-  memcpy(kf.F_data, F, sizeof(F));
-  memcpy(kf.Q_data, Q, sizeof(Q));
-  memcpy(kf.R_data, R, sizeof(R));
-  memcpy(kf.P_data, P, sizeof(P));
-  memcpy(kf.H_data, H, sizeof(H));
+  memcpy(kf_v.F_data, F, sizeof(F));
+  memcpy(kf_v.Q_data, Q, sizeof(Q));
+  memcpy(kf_v.R_data, R, sizeof(R));
+  memcpy(kf_v.P_data, P, sizeof(P));
+  memcpy(kf_v.H_data, H, sizeof(H));
+}
+
+void Chassis::GyroEstInit() {
+  // 角速度卡尔曼观测初始化
+  Kalman_Filter_Init(&kf_w, 2, 0, 2);
+  float F[4] = { 1, 0.001, 0, 1 };
+  float Q[4] = { Eular_PROCESS_NOISE, 0, 0, GYRO_PROCESS_NOISE };
+  float R[4] = { Eular_MEASURE_NOISE, 0, 0, GYRO_MEASURE_NOISE };
+  float P[4] = { 100000, 0, 0, 100000 };    //先验估计协方差P
+  float H[4] = { 1, 0, 0, 1 };              //观测矩阵H
+
+  //将矩阵赋值到kf结构体中
+  memcpy(kf_w.F_data, F, sizeof(F));
+  memcpy(kf_w.Q_data, Q, sizeof(Q));
+  memcpy(kf_w.R_data, R, sizeof(R));
+  memcpy(kf_w.P_data, P, sizeof(P));
+  memcpy(kf_w.H_data, H, sizeof(H));
 }
 
 /**
@@ -140,7 +157,7 @@ void Chassis::PidInit() {
   roll_ctrl_.Init(100.0f, 0.0f, 0.0f, 30.0f, 0.001f);
 
   //yaw轴双环pid
-  yaw_pos_.Init(4.0f, 0.0f, 1.0f, 3.0f, 0.001f);
+  yaw_pos_.Init(2.0f, 0.0f, 2.0f, 3.0f, 0.001f);
   yaw_speed_.Init(4.0f, 4.0f, 0.0f, 10.0f, 0.0f);
 
   //pid增强
@@ -545,20 +562,28 @@ void Chassis::SpeedCalc() {
   }
 
   // 使用kf同时估计加速度和速度,滤波更新
-  kf.MeasuredVector[0] = vel_m;
-  kf.MeasuredVector[1] = INS.MotionAccel_n[Y];
-  kf.F_data[1] = controller_dt_;  // 更新F矩阵,采用更精确的deltaT
-  Kalman_Filter_Update(&kf);      // 卡尔曼滤波
-  vel_ = kf.xhat_data[0];   //滤波后速度
-  acc_ = kf.xhat_data[1];   //滤波后加速度
+  kf_v.MeasuredVector[0] = vel_m;
+  kf_v.MeasuredVector[1] = INS.MotionAccel_n[Y];
+  kf_v.F_data[1] = controller_dt_;  // 更新F矩阵,采用更精确的deltaT
+  Kalman_Filter_Update(&kf_v);      // 卡尔曼滤波
+  vel_ = kf_v.xhat_data[0];   //滤波后速度
+  acc_ = kf_v.xhat_data[1];   //滤波后加速度
 
   //动态调整噪声参数
   if (fabsf(acc_) > 5.f) {
-    kf.R_data[0] = 25;
-    kf.R_data[3] = 900;
+    kf_v.R_data[0] = 25;
+    kf_v.R_data[3] = 900;
   }
   else {
-    kf.R_data[0] = VEL_MEASURE_NOISE;
-    kf.R_data[3] = VEL_MEASURE_NOISE;
+    kf_v.R_data[0] = VEL_MEASURE_NOISE;
+    kf_v.R_data[3] = VEL_MEASURE_NOISE;
   }
+}
+
+void Chassis::GyroCalc() {
+  kf_w.MeasuredVector[0] = INS.Yaw;
+  kf_w.MeasuredVector[1] = INS.Gyro[Z];
+  kf_w.F_data[1] = controller_dt_;  // 更新F矩阵,采用更精确的deltaT
+  Kalman_Filter_Update(&kf_w);      // 卡尔曼滤波
+  gyro_ = kf_w.xhat_data[1];
 }
